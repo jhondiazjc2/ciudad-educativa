@@ -6,7 +6,7 @@ interface Modulo {
   ruta: string;
   titulo: string;
   descripcion: string;
-  icon: 'reportes' | 'matricular' | 'consultar' | 'docentes' | 'colegios';
+  icon: 'reportes' | 'matricular' | 'docentes' | 'colegios';
 }
 
 @Component({
@@ -30,15 +30,9 @@ export class Inicio {
       },
       {
         ruta: '/matricular',
-        titulo: 'Matricular',
-        descripcion: 'Registrar nuevos estudiantes y asignarlos a grado, grupo y año académico.',
+        titulo: 'Estudiantes',
+        descripcion: 'Matricular y consultar estudiantes, asignarlos a grado, grupo y año académico.',
         icon: 'matricular'
-      },
-      {
-        ruta: '/consultar',
-        titulo: 'Consultar',
-        descripcion: 'Buscar estudiantes matriculados y revisar su histórico académico.',
-        icon: 'consultar'
       },
       {
         ruta: '/docentes',

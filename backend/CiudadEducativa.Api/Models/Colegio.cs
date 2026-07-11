@@ -8,4 +8,5 @@ public class Colegio
 
     public ICollection<Matricula> Matriculas { get; set; } = [];
     public ICollection<DocenteColegio> DocenteColegios { get; set; } = [];
+    public ICollection<Grupo> Grupos { get; set; } = [];
 }

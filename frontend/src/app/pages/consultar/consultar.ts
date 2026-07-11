@@ -13,11 +13,12 @@ import { CatalogoColegioItem, CatalogoItem, HistoricoEstudiante, MatriculaRespon
 export class Consultar implements OnInit {
   colegios: CatalogoColegioItem[] = [];
   grados: CatalogoItem[] = [];
-  anios: CatalogoItem[] = [];
 
   codigoDane = '';
   gradoId = 0;
-  anioAcademicoId = 0;
+  anio = new Date().getFullYear();
+  anioMin = 2000;
+  anioMax = new Date().getFullYear() + 20;
 
   resultados: MatriculaResponse[] = [];
   historico: HistoricoEstudiante[] = [];
@@ -35,10 +36,6 @@ export class Consultar implements OnInit {
     return toSelectOptions(this.grados);
   }
 
-  get anioOptions() {
-    return toSelectOptions(this.anios);
-  }
-
   ngOnInit(): void {
     this.api.getColegios().subscribe({
       next: (d) => {
@@ -54,9 +51,13 @@ export class Consultar implements OnInit {
       next: (d) => (this.grados = d),
       error: () => (this.error = 'No se pudieron cargar los grados.')
     });
-    this.api.getAnios().subscribe({
-      next: (d) => (this.anios = d),
-      error: () => (this.error = 'No se pudieron cargar los años académicos.')
+    this.api.getAnioAcademicoConfig().subscribe({
+      next: (cfg) => {
+        this.anio = cfg.vigente;
+        this.anioMin = cfg.minimo;
+        this.anioMax = cfg.maximo;
+      },
+      error: () => (this.error = 'No se pudo cargar la configuración del año académico.')
     });
   }
 
@@ -65,12 +66,12 @@ export class Consultar implements OnInit {
     this.historico = [];
     this.estudianteSeleccionado = '';
 
-    if (!this.codigoDane || !this.gradoId || !this.anioAcademicoId) {
+    if (!this.codigoDane || !this.gradoId || !this.anio) {
       this.error = 'Selecciona colegio, grado y año.';
       return;
     }
 
-    this.api.consultarMatriculas(this.codigoDane, this.gradoId, this.anioAcademicoId).subscribe({
+    this.api.consultarMatriculas(this.codigoDane, this.gradoId, this.anio).subscribe({
       next: (data) => (this.resultados = data),
       error: (err) => {
         this.error = err.status === 403

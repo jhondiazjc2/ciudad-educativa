@@ -13,6 +13,8 @@ import {
   DocenteColegio,
   DocentesPorSector,
   EstudiantesPorEdad,
+  ActualizarMatriculaRequest,
+  AnioAcademicoConfig,
   GrupoItem,
   GuardarColegioRequest,
   HistoricoEstudiante,
@@ -33,14 +35,14 @@ export class ApiService {
     return this.http.get<CatalogoItem[]>(`${API}/catalogos/grados`);
   }
 
-  getGrupos(gradoId?: number) {
-    let params = new HttpParams();
+  getGrupos(codigoDane: string, gradoId?: number) {
+    let params = new HttpParams().set('codigoDane', codigoDane);
     if (gradoId) params = params.set('gradoId', gradoId);
     return this.http.get<GrupoItem[]>(`${API}/catalogos/grupos`, { params });
   }
 
-  getAnios() {
-    return this.http.get<CatalogoItem[]>(`${API}/catalogos/anios`);
+  getAnioAcademicoConfig() {
+    return this.http.get<AnioAcademicoConfig>(`${API}/catalogos/anios`);
   }
 
   getTiposDocumento() {
@@ -55,11 +57,28 @@ export class ApiService {
     return this.http.post<MatriculaResponse>(`${API}/matriculas`, data);
   }
 
-  consultarMatriculas(codigoDane: string, gradoId: number, anioAcademicoId: number) {
+  listarMatriculas(codigoDane?: string, anio?: number, gradoId?: number, busqueda?: string) {
+    let params = new HttpParams();
+    if (codigoDane) params = params.set('codigoDane', codigoDane);
+    if (anio) params = params.set('anio', anio);
+    if (gradoId) params = params.set('gradoId', gradoId);
+    if (busqueda?.trim()) params = params.set('busqueda', busqueda.trim());
+    return this.http.get<MatriculaResponse[]>(`${API}/matriculas/listado`, { params });
+  }
+
+  actualizarMatricula(id: number, data: ActualizarMatriculaRequest) {
+    return this.http.put<MatriculaResponse>(`${API}/matriculas/${id}`, data);
+  }
+
+  eliminarMatricula(id: number) {
+    return this.http.delete<void>(`${API}/matriculas/${id}`);
+  }
+
+  consultarMatriculas(codigoDane: string, gradoId: number, anio: number) {
     const params = new HttpParams()
       .set('codigoDane', codigoDane)
       .set('gradoId', gradoId)
-      .set('anioAcademicoId', anioAcademicoId);
+      .set('anio', anio);
     return this.http.get<MatriculaResponse[]>(`${API}/matriculas`, { params });
   }
 

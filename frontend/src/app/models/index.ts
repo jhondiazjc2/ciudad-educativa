@@ -28,7 +28,21 @@ export interface CrearMatriculaRequest {
   codigoDane: string;
   gradoId: number;
   grupoId: number;
-  anioAcademicoId: number;
+  anio: number;
+}
+
+export interface AnioAcademicoConfig {
+  vigente: number;
+  minimo: number;
+  maximo: number;
+}
+
+export interface ActualizarMatriculaRequest {
+  nombre: string;
+  fechaNacimiento: string;
+  gradoId: number;
+  grupoId: number;
+  anio: number;
 }
 
 export interface MatriculaResponse {

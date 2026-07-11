@@ -1,15 +1,31 @@
 namespace CiudadEducativa.Api.DTOs;
 
-public record CrearMatriculaRequest(
-    string Nombre,
-    string TipoDocumento,
-    string NumeroDocumento,
-    DateTime FechaNacimiento,
-    string CodigoDane,
-    int GradoId,
-    int GrupoId,
-    int AnioAcademicoId
-);
+using System.Text.Json.Serialization;
+
+public class CrearMatriculaRequest
+{
+    public string Nombre { get; set; } = string.Empty;
+    public string TipoDocumento { get; set; } = string.Empty;
+    public string NumeroDocumento { get; set; } = string.Empty;
+    public DateTime FechaNacimiento { get; set; }
+    public string CodigoDane { get; set; } = string.Empty;
+    public int GradoId { get; set; }
+    public int GrupoId { get; set; }
+
+    [JsonPropertyName("anio")]
+    public int Anio { get; set; }
+}
+
+public class ActualizarMatriculaRequest
+{
+    public string Nombre { get; set; } = string.Empty;
+    public DateTime FechaNacimiento { get; set; }
+    public int GradoId { get; set; }
+    public int GrupoId { get; set; }
+
+    [JsonPropertyName("anio")]
+    public int Anio { get; set; }
+}
 
 public record MatriculaResponse(
     int Id,

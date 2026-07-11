@@ -1,0 +1,30 @@
+<div class="space-y-3" role="list">
+  @for (item of items(); track item.id) {
+    <button
+      type="button"
+      role="listitem"
+      class="w-full text-left rounded-xl p-2 -mx-2 transition-colors hover:bg-primary-light/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+      [class.bg-primary-light]="selectedId() === item.id"
+      (mouseenter)="hoveredId.set(item.id)"
+      (mouseleave)="hoveredId.set(null)"
+      (click)="selectItem.emit(item.id)"
+      [attr.aria-pressed]="selectedId() === item.id"
+    >
+      <div class="flex justify-between items-baseline gap-2 text-sm mb-1.5">
+        <span class="font-medium text-primary-dark" [class.text-accent]="resaltar(item.id)">{{ item.label }}</span>
+        <span class="tabular-nums text-muted shrink-0">
+          <strong class="text-primary-dark">{{ item.value }}</strong>
+          <span class="ml-1">({{ porcentaje(item.value) }}%)</span>
+        </span>
+      </div>
+      <div class="h-3 bg-secondary rounded-full overflow-hidden">
+        <div
+          class="h-full rounded-full transition-all duration-700 ease-out"
+          [class]="item.colorClass"
+          [class.opacity-40]="!resaltar(item.id)"
+          [style.width.%]="animated() ? anchoBarra(item.value) : 0"
+        ></div>
+      </div>
+    </button>
+  }
+</div>

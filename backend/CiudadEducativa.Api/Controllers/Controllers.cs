@@ -29,19 +29,98 @@ public class MatriculasController(MatriculaService service, UserContext user) : 
         {
             return BadRequest(new { message = ex.Message });
         }
+        catch (DbUpdateException ex) when (ex.InnerException?.Message.Contains("FK_Matriculas_Anios") == true)
+        {
+            return BadRequest(new { message = "El año académico no es válido. Reinicie el backend e intente de nuevo." });
+        }
     }
 
     [HttpGet]
     public async Task<ActionResult<List<MatriculaResponse>>> Consultar(
         [FromQuery] string codigoDane,
         [FromQuery] int gradoId,
-        [FromQuery] int anioAcademicoId)
+        [FromQuery] int anio)
     {
         try
         {
             user.EnsureColegioAccess(codigoDane);
-            var result = await service.ConsultarMatriculasAsync(codigoDane, gradoId, anioAcademicoId);
+            var result = await service.ConsultarMatriculasAsync(codigoDane, gradoId, anio);
             return Ok(result);
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Forbid();
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    [HttpGet("listado")]
+    public async Task<ActionResult<List<MatriculaResponse>>> Listado(
+        [FromQuery] string? codigoDane,
+        [FromQuery] int? anio,
+        [FromQuery] int? gradoId,
+        [FromQuery] string? busqueda)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(codigoDane))
+            {
+                if (!user.IsAdmin)
+                    return BadRequest(new { message = "El codigo DANE del colegio es obligatorio." });
+            }
+            else
+            {
+                user.EnsureColegioAccess(codigoDane);
+            }
+
+            return Ok(await service.ListarMatriculasAsync(codigoDane, anio, gradoId, busqueda));
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Forbid();
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    [HttpPut("{id}")]
+    public async Task<ActionResult<MatriculaResponse>> Actualizar(int id, [FromBody] ActualizarMatriculaRequest request)
+    {
+        try
+        {
+            var matricula = await service.ObtenerMatriculaAsync(id);
+            if (matricula is null) return NotFound();
+            user.EnsureColegioAccess(matricula.CodigoDane);
+
+            var result = await service.ActualizarMatriculaAsync(id, request);
+            return Ok(result);
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Forbid();
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> Eliminar(int id)
+    {
+        try
+        {
+            var matricula = await service.ObtenerMatriculaAsync(id);
+            if (matricula is null) return NotFound();
+            user.EnsureColegioAccess(matricula.CodigoDane);
+
+            var ok = await service.EliminarMatriculaAsync(id);
+            return ok ? NoContent() : NotFound();
         }
         catch (UnauthorizedAccessException)
         {
@@ -154,20 +233,44 @@ public class CatalogosController(AppDbContext db, UserContext user) : Controller
             .Select(g => new CatalogoItem(g.Id, g.Nombre)).ToListAsync());
 
     [HttpGet("grupos")]
-    public async Task<ActionResult<List<GrupoItem>>> Grupos([FromQuery] int? gradoId)
+    public async Task<ActionResult<List<GrupoItem>>> Grupos(
+        [FromQuery] string codigoDane,
+        [FromQuery] int? gradoId)
     {
-        var query = db.Grupos.Include(g => g.DocenteDirector).AsQueryable();
-        if (gradoId.HasValue) query = query.Where(g => g.GradoId == gradoId.Value);
+        if (string.IsNullOrWhiteSpace(codigoDane))
+            return BadRequest(new { message = "El codigo DANE del colegio es obligatorio." });
 
-        return Ok(await query.OrderBy(g => g.Nombre)
-            .Select(g => new GrupoItem(g.Id, g.Nombre, g.GradoId, g.DocenteDirector != null ? g.DocenteDirector.Nombre : null))
-            .ToListAsync());
+        try
+        {
+            user.EnsureColegioAccess(codigoDane);
+
+            var query = db.Grupos
+                .Include(g => g.DocenteDirector)
+                .Where(g => g.CodigoDane == codigoDane);
+
+            if (gradoId.HasValue) query = query.Where(g => g.GradoId == gradoId.Value);
+
+            return Ok(await query.OrderBy(g => g.Nombre)
+                .Select(g => new GrupoItem(g.Id, g.Nombre, g.GradoId, g.DocenteDirector != null ? g.DocenteDirector.Nombre : null))
+                .ToListAsync());
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Forbid();
+        }
     }
 
     [HttpGet("anios")]
-    public async Task<ActionResult<List<CatalogoItem>>> Anios()
-        => Ok(await db.AniosAcademicos.OrderByDescending(a => a.Anio)
-            .Select(a => new CatalogoItem(a.Id, a.Anio.ToString())).ToListAsync());
+    public ActionResult<object> Anios()
+    {
+        var vigente = DateTime.Today.Year;
+        return Ok(new
+        {
+            vigente,
+            minimo = 2000,
+            maximo = vigente + 20
+        });
+    }
 
     [HttpGet("tipos-documento")]
     public ActionResult<List<CatalogoDocumentoItem>> TiposDocumento()

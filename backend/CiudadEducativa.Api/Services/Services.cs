@@ -7,6 +7,9 @@ namespace CiudadEducativa.Api.Services;
 
 public class MatriculaService(AppDbContext db)
 {
+    private const int AnioMinimo = 2000;
+    private const int AniosProyeccionFutura = 20;
+
     public static int CalcularEdad(DateTime fechaNacimiento)
     {
         var hoy = DateTime.Today;
@@ -32,6 +35,11 @@ public class MatriculaService(AppDbContext db)
         if (string.IsNullOrWhiteSpace(numeroDocumento))
             throw new InvalidOperationException("El numero de documento es obligatorio.");
 
+        if (request.Anio <= 0)
+            throw new InvalidOperationException("El año académico es obligatorio.");
+
+        var anioAcademicoId = await ObtenerOCrearAnioAcademicoIdAsync(request.Anio);
+
         var estudiante = await db.Estudiantes
             .FirstOrDefaultAsync(e => e.TipoDocumento == tipoDocumento && e.NumeroDocumento == numeroDocumento);
 
@@ -51,6 +59,7 @@ public class MatriculaService(AppDbContext db)
         {
             estudiante.Nombre = request.Nombre.Trim();
             estudiante.FechaNacimiento = request.FechaNacimiento.Date;
+            await db.SaveChangesAsync();
         }
 
         var matriculaActivaOtroColegio = await db.Matriculas
@@ -59,12 +68,20 @@ public class MatriculaService(AppDbContext db)
         if (matriculaActivaOtroColegio)
             throw new InvalidOperationException("El estudiante ya tiene una matrícula activa en otro colegio.");
 
+        var grupoValido = await db.Grupos.AnyAsync(g =>
+            g.Id == request.GrupoId &&
+            g.CodigoDane == request.CodigoDane &&
+            g.GradoId == request.GradoId);
+
+        if (!grupoValido)
+            throw new InvalidOperationException("El grupo seleccionado no pertenece al colegio y grado indicados.");
+
         var matriculaMismoPeriodo = await db.Matriculas
             .FirstOrDefaultAsync(m =>
                 m.EstudianteId == estudiante.Id &&
                 m.CodigoDane == request.CodigoDane &&
                 m.GradoId == request.GradoId &&
-                m.AnioAcademicoId == request.AnioAcademicoId);
+                m.AnioAcademicoId == anioAcademicoId);
 
         if (matriculaMismoPeriodo is not null)
         {
@@ -99,7 +116,7 @@ public class MatriculaService(AppDbContext db)
             CodigoDane = request.CodigoDane,
             GradoId = request.GradoId,
             GrupoId = request.GrupoId,
-            AnioAcademicoId = request.AnioAcademicoId,
+            AnioAcademicoId = anioAcademicoId,
             Activa = true,
             FechaMatricula = DateTime.Today
         };
@@ -110,8 +127,12 @@ public class MatriculaService(AppDbContext db)
         return (await ObtenerMatriculaPorIdAsync(matricula.Id))!;
     }
 
-    public async Task<List<MatriculaResponse>> ConsultarMatriculasAsync(string codigoDane, int gradoId, int anioAcademicoId)
+    public async Task<List<MatriculaResponse>> ConsultarMatriculasAsync(string codigoDane, int gradoId, int anio)
     {
+        var anioAcademicoId = await ObtenerAnioAcademicoIdAsync(anio);
+        if (anioAcademicoId is null)
+            return [];
+
         return await db.Matriculas
             .Include(m => m.Estudiante)
             .Include(m => m.Colegio)
@@ -122,6 +143,115 @@ public class MatriculaService(AppDbContext db)
             .OrderBy(m => m.Estudiante.Nombre)
             .Select(m => MapToResponse(m))
             .ToListAsync();
+    }
+
+    public async Task<List<MatriculaResponse>> ListarMatriculasAsync(
+        string? codigoDane, int? anio, int? gradoId, string? busqueda = null)
+    {
+        var query = db.Matriculas
+            .Include(m => m.Estudiante)
+            .Include(m => m.Colegio)
+            .Include(m => m.Grado)
+            .Include(m => m.Grupo).ThenInclude(g => g.DocenteDirector)
+            .Include(m => m.AnioAcademico)
+            .Where(m => m.Activa);
+
+        if (!string.IsNullOrWhiteSpace(codigoDane))
+            query = query.Where(m => m.CodigoDane == codigoDane);
+
+        if (gradoId is > 0)
+            query = query.Where(m => m.GradoId == gradoId);
+
+        if (anio is > 0)
+        {
+            var anioAcademicoId = await ObtenerAnioAcademicoIdAsync(anio.Value);
+            if (anioAcademicoId is null)
+                return [];
+            query = query.Where(m => m.AnioAcademicoId == anioAcademicoId);
+        }
+
+        if (!string.IsNullOrWhiteSpace(busqueda))
+        {
+            var termino = busqueda.Trim();
+            var terminoDocumento = TiposDocumento.NormalizarNumeroDocumento(termino);
+            var soloDigitos = terminoDocumento.All(char.IsDigit);
+
+            query = query.Where(m =>
+                EF.Functions.Like(m.Estudiante.Nombre, $"%{termino}%") ||
+                m.Estudiante.NumeroDocumento.Contains(terminoDocumento) ||
+                (!soloDigitos && EF.Functions.Like(
+                    m.Estudiante.TipoDocumento + " " + m.Estudiante.NumeroDocumento,
+                    $"%{termino}%")));
+        }
+
+        return await query
+            .OrderBy(m => m.Colegio.Nombre)
+            .ThenBy(m => m.Estudiante.Nombre)
+            .Select(m => MapToResponse(m))
+            .ToListAsync();
+    }
+
+    public async Task<MatriculaResponse?> ObtenerMatriculaAsync(int id)
+        => await ObtenerMatriculaPorIdAsync(id);
+
+    public async Task<MatriculaResponse> ActualizarMatriculaAsync(int id, ActualizarMatriculaRequest request)
+    {
+        if (request.Anio <= 0)
+            throw new InvalidOperationException("El año académico es obligatorio.");
+
+        var matricula = await db.Matriculas
+            .Include(m => m.Estudiante)
+            .FirstOrDefaultAsync(m => m.Id == id)
+            ?? throw new InvalidOperationException("Matrícula no encontrada.");
+
+        if (!matricula.Activa)
+            throw new InvalidOperationException("Solo se pueden editar matrículas activas.");
+
+        var nombre = request.Nombre.Trim();
+        if (string.IsNullOrWhiteSpace(nombre))
+            throw new InvalidOperationException("El nombre del estudiante es obligatorio.");
+
+        var grupoValido = await db.Grupos.AnyAsync(g =>
+            g.Id == request.GrupoId &&
+            g.CodigoDane == matricula.CodigoDane &&
+            g.GradoId == request.GradoId);
+
+        if (!grupoValido)
+            throw new InvalidOperationException("El grupo seleccionado no pertenece al colegio y grado indicados.");
+
+        var anioAcademicoId = await ObtenerOCrearAnioAcademicoIdAsync(request.Anio);
+
+        var duplicada = await db.Matriculas.AnyAsync(m =>
+            m.Id != id &&
+            m.EstudianteId == matricula.EstudianteId &&
+            m.CodigoDane == matricula.CodigoDane &&
+            m.GradoId == request.GradoId &&
+            m.AnioAcademicoId == anioAcademicoId &&
+            m.Activa);
+
+        if (duplicada)
+            throw new InvalidOperationException(
+                "El estudiante ya tiene otra matrícula activa en este colegio, grado y año académico.");
+
+        matricula.Estudiante.Nombre = nombre;
+        matricula.Estudiante.FechaNacimiento = request.FechaNacimiento.Date;
+        matricula.GradoId = request.GradoId;
+        matricula.GrupoId = request.GrupoId;
+        matricula.AnioAcademicoId = anioAcademicoId;
+
+        await db.SaveChangesAsync();
+        return (await ObtenerMatriculaPorIdAsync(id))!;
+    }
+
+    public async Task<bool> EliminarMatriculaAsync(int id)
+    {
+        var matricula = await db.Matriculas.FindAsync(id);
+        if (matricula is null || !matricula.Activa)
+            return false;
+
+        matricula.Activa = false;
+        await db.SaveChangesAsync();
+        return true;
     }
 
     public async Task<List<HistoricoEstudianteResponse>> ObtenerHistoricoAsync(int estudianteId)
@@ -183,6 +313,56 @@ public class MatriculaService(AppDbContext db)
         return resultado is null
             ? null
             : new ColegioMayorMatriculaResponse(resultado.Nombre, resultado.Sector, resultado.Total);
+    }
+
+    private static void ValidarAnio(int anio)
+    {
+        var maximo = DateTime.Today.Year + AniosProyeccionFutura;
+        if (anio < AnioMinimo || anio > maximo)
+            throw new InvalidOperationException($"El año académico debe estar entre {AnioMinimo} y {maximo}.");
+    }
+
+    private async Task<int?> ObtenerAnioAcademicoIdAsync(int anio)
+    {
+        ValidarAnio(anio);
+        var registro = await db.AniosAcademicos
+            .Where(a => a.Anio == anio)
+            .Select(a => (int?)a.Id)
+            .FirstOrDefaultAsync();
+        return registro;
+    }
+
+    private async Task<int> ObtenerOCrearAnioAcademicoIdAsync(int anio)
+    {
+        ValidarAnio(anio);
+
+        var existenteId = await db.AniosAcademicos
+            .Where(a => a.Anio == anio)
+            .Select(a => (int?)a.Id)
+            .FirstOrDefaultAsync();
+
+        if (existenteId.HasValue)
+            return existenteId.Value;
+
+        try
+        {
+            db.AniosAcademicos.Add(new AnioAcademico { Anio = anio });
+            await db.SaveChangesAsync();
+        }
+        catch (DbUpdateException)
+        {
+            // Otro request pudo crear el mismo año en paralelo.
+        }
+
+        var id = await db.AniosAcademicos
+            .Where(a => a.Anio == anio)
+            .Select(a => (int?)a.Id)
+            .FirstOrDefaultAsync();
+
+        if (id is null or <= 0)
+            throw new InvalidOperationException($"No se pudo registrar el año académico {anio}.");
+
+        return id.Value;
     }
 
     private async Task<MatriculaResponse?> ObtenerMatriculaPorIdAsync(int id)
@@ -359,6 +539,57 @@ public class DocenteService(AppDbContext db)
     }
 }
 
+public static class GrupoCatalogoService
+{
+    public static string NombreGrupo(int ordenGrado, int subnivel)
+    {
+        if (subnivel is < 1 or > 5)
+            throw new ArgumentOutOfRangeException(nameof(subnivel));
+
+        return ordenGrado == 0
+            ? (ordenGrado * 1000 + subnivel).ToString("000")
+            : $"{ordenGrado}{subnivel:D2}";
+    }
+
+    public static async Task CrearGruposParaColegioAsync(AppDbContext db, string codigoDane)
+    {
+        if (await db.Grupos.AnyAsync(g => g.CodigoDane == codigoDane))
+            return;
+
+        var grados = await db.Grados.OrderBy(g => g.Orden).ToListAsync();
+        var docentes = await db.DocenteColegios
+            .Where(dc => dc.CodigoDane == codigoDane && dc.Activo)
+            .OrderBy(dc => dc.DocenteId)
+            .Select(dc => dc.DocenteId)
+            .ToListAsync();
+
+        var grupos = new List<Grupo>();
+        var indice = 0;
+
+        foreach (var grado in grados)
+        {
+            for (var subnivel = 1; subnivel <= 5; subnivel++)
+            {
+                int? directorId = null;
+                if (docentes.Count > 0)
+                    directorId = docentes[indice % docentes.Count];
+
+                grupos.Add(new Grupo
+                {
+                    CodigoDane = codigoDane,
+                    GradoId = grado.Id,
+                    Nombre = NombreGrupo(grado.Orden, subnivel),
+                    DocenteDirectorId = directorId
+                });
+                indice++;
+            }
+        }
+
+        db.Grupos.AddRange(grupos);
+        await db.SaveChangesAsync();
+    }
+}
+
 public class ColegioService(AppDbContext db)
 {
     private static readonly HashSet<string> SectoresValidos = ["Publico", "Privado"];
@@ -424,6 +655,7 @@ public class ColegioService(AppDbContext db)
         var colegio = new Colegio { CodigoDane = codigoDane, Nombre = nombre, Sector = sector };
         db.Colegios.Add(colegio);
         await db.SaveChangesAsync();
+        await GrupoCatalogoService.CrearGruposParaColegioAsync(db, codigoDane);
         return new ColegioResponse(colegio.CodigoDane, colegio.Nombre, colegio.Sector);
     }
 
@@ -461,6 +693,9 @@ public class ColegioService(AppDbContext db)
 
         if (await db.DocenteColegios.AnyAsync(dc => dc.CodigoDane == codigoDane))
             throw new InvalidOperationException("No se puede eliminar el colegio porque tiene docentes asignados.");
+
+        var grupos = await db.Grupos.Where(g => g.CodigoDane == codigoDane).ToListAsync();
+        db.Grupos.RemoveRange(grupos);
 
         db.Colegios.Remove(colegio);
         await db.SaveChangesAsync();

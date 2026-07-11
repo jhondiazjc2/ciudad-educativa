@@ -35,7 +35,10 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         modelBuilder.Entity<Grupo>(e =>
         {
             e.ToTable("Grupos");
+            e.Property(x => x.CodigoDane).HasMaxLength(12);
             e.Property(x => x.Nombre).HasMaxLength(10);
+            e.HasIndex(x => new { x.CodigoDane, x.GradoId, x.Nombre }).IsUnique();
+            e.HasOne(x => x.Colegio).WithMany(x => x.Grupos).HasForeignKey(x => x.CodigoDane);
             e.HasOne(x => x.Grado).WithMany(x => x.Grupos).HasForeignKey(x => x.GradoId);
             e.HasOne(x => x.DocenteDirector).WithMany(x => x.GruposDirigidos).HasForeignKey(x => x.DocenteDirectorId);
         });
@@ -44,6 +47,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         {
             e.ToTable("AniosAcademicos");
             e.HasIndex(x => x.Anio).IsUnique();
+            e.Property(x => x.Id).ValueGeneratedOnAdd();
         });
 
         modelBuilder.Entity<Estudiante>(e =>

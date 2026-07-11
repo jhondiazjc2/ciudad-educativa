@@ -1,79 +1,269 @@
 <section>
-  <header class="mb-6">
-    <h1 class="text-3xl font-bold text-primary-dark m-0 mb-1">
-      @if (auth.isAdmin()) { Reportes de la Ciudad } @else { Reportes de {{ auth.user()?.colegioNombre }} }
-    </h1>
-    <p class="text-muted m-0">
-      @if (auth.isAdmin()) { Consultas analíticas de toda la ciudad } @else { Consultas de su colegio }
-    </p>
+  <header class="mb-6 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+    <div>
+      <h1 class="text-3xl font-bold text-primary-dark m-0 mb-1">
+        @if (auth.isAdmin()) { Reportes de la Ciudad } @else { Reportes de {{ auth.user()?.colegioNombre }} }
+      </h1>
+      <p class="text-muted m-0">
+        @if (auth.isAdmin()) { Consultas analíticas de toda la ciudad } @else { Consultas de su colegio }
+      </p>
+      @if (ultimaActualizacion()) {
+        <p class="text-xs text-muted mt-2 m-0">
+          Actualizado {{ ultimaActualizacion() | date:'dd/MM/yyyy HH:mm' }}
+        </p>
+      }
+    </div>
+    <button class="btn-secondary shrink-0" type="button" (click)="cargar()" [disabled]="cargando()">
+      {{ cargando() ? 'Actualizando...' : 'Actualizar reportes' }}
+    </button>
   </header>
 
   @if (error()) {
     <div class="alert-error">{{ error() }}</div>
   }
 
-  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4 mb-6">
-    <article class="card">
-      <h2 class="text-base font-semibold text-primary-dark m-0 mb-3">
-        @if (auth.isAdmin()) { Estudiantes por edad (ciudad) } @else { Estudiantes por edad (mi colegio) }
-      </h2>
-      @if (edades(); as data) {
-        <ul class="list-none p-0 m-0 space-y-1">
-          <li class="py-1 border-b border-border"><strong>3 - 7 años:</strong> {{ data.entre3y7 }}</li>
-          <li class="py-1 border-b border-border"><strong>8 - 12 años:</strong> {{ data.entre8y12 }}</li>
-          <li class="py-1 border-b border-border"><strong>Mayores de 12:</strong> {{ data.mayoresDe12 }}</li>
-          <li class="py-1 text-primary font-semibold"><strong>Total activos:</strong> {{ data.total }}</li>
-        </ul>
-      } @else {
-        <p class="text-muted">Cargando...</p>
-      }
+  <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
+    <article class="card !p-4 transition-shadow hover:shadow-md">
+      <p class="text-xs uppercase tracking-wide text-muted m-0 mb-1">Estudiantes activos</p>
+      <p class="text-2xl font-bold text-primary-dark m-0 tabular-nums">
+        @if (edades(); as data) { {{ data.total }} } @else { — }
+      </p>
     </article>
 
     @if (auth.isAdmin()) {
-      <article class="card">
-        <h2 class="text-base font-semibold text-primary-dark m-0 mb-3">Docentes por sector</h2>
-        @if (docentes(); as data) {
-          <ul class="list-none p-0 m-0 space-y-1">
-            <li class="py-1 border-b border-border"><strong>Público:</strong> {{ data.publico }}</li>
-            <li class="py-1 border-b border-border"><strong>Privado:</strong> {{ data.privado }}</li>
-            <li class="py-1 text-primary font-semibold"><strong>Total docentes:</strong> {{ data.total }}</li>
-          </ul>
-        } @else {
-          <p class="text-muted">Cargando...</p>
-        }
+      <article class="card !p-4 transition-shadow hover:shadow-md">
+        <p class="text-xs uppercase tracking-wide text-muted m-0 mb-1">Docentes activos</p>
+        <p class="text-2xl font-bold text-primary-dark m-0 tabular-nums">
+          @if (docentes(); as data) { {{ data.total }} } @else { — }
+        </p>
       </article>
     }
 
-    <article class="card border-primary bg-gradient-to-b from-white to-primary-light">
-      <h2 class="text-base font-semibold text-primary-dark m-0 mb-3">
-        @if (auth.isAdmin()) { Colegio con más estudiantes } @else { Estudiantes activos en mi colegio }
-      </h2>
-      @if (colegioTop(); as data) {
-        <p class="text-2xl font-bold text-accent m-1">{{ data.colegio }}</p>
-        <p class="text-muted m-0">{{ formatearSector(data.sector) }} · {{ data.totalEstudiantes }} estudiantes activos</p>
-      } @else {
-        <p class="text-muted">Cargando...</p>
-      }
+    <article class="card !p-4 transition-shadow hover:shadow-md">
+      <p class="text-xs uppercase tracking-wide text-muted m-0 mb-1">
+        @if (auth.isAdmin()) { Mayor matrícula } @else { Mi colegio }
+      </p>
+      <p class="text-2xl font-bold text-accent m-0 tabular-nums">
+        @if (colegioTop(); as data) { {{ data.totalEstudiantes }} } @else { — }
+      </p>
     </article>
 
-    <article class="card border-accent bg-accent-light">
-      <h2 class="text-base font-semibold text-primary m-0 mb-3">
-        Contratos por vencer (30 días) @if (!auth.isAdmin()) { en mi colegio }
-      </h2>
-      @if (contratosPorVencer().length) {
-        <ul class="list-none p-0 m-0 space-y-2">
-          @for (c of contratosPorVencer(); track c.docenteId) {
-            <li class="py-1 border-b border-accent/30">
-              <strong>{{ c.nombre }}</strong> — vence {{ c.vigenciaContrato | date:'dd/MM/yyyy' }}
-              ({{ c.diasRestantes }} días)
-            </li>
-          }
-        </ul>
-      } @else {
-        <p class="text-muted">Sin contratos próximos a vencer.</p>
+    <article class="card !p-4 transition-shadow hover:shadow-md">
+      <p class="text-xs uppercase tracking-wide text-muted m-0 mb-1">Contratos por vencer</p>
+      <p class="text-2xl font-bold text-primary-dark m-0 tabular-nums">{{ resumenContratos().total }}</p>
+      @if (resumenContratos().urgentes > 0) {
+        <p class="text-xs text-red-700 mt-1 m-0">{{ resumenContratos().urgentes }} urgentes (≤7 días)</p>
       }
     </article>
   </div>
 
-  <button class="btn-secondary" (click)="cargar()">Actualizar reportes</button>
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5">
+    <article class="card transition-all hover:shadow-md">
+      <div class="flex items-start justify-between gap-3 mb-4">
+        <div>
+          <h2 class="text-base font-semibold text-primary-dark m-0">
+            @if (auth.isAdmin()) { Estudiantes por edad (ciudad) } @else { Estudiantes por edad (mi colegio) }
+          </h2>
+          <p class="text-xs text-muted m-0 mt-1">Haz clic en una barra para ver el detalle</p>
+        </div>
+        @if (edades(); as data) {
+          <span class="text-sm font-semibold text-accent tabular-nums">{{ data.total }} total</span>
+        }
+      </div>
+
+      @if (cargando() && !edades()) {
+        <div class="space-y-3 animate-pulse">
+          @for (i of [1, 2, 3]; track i) {
+            <div class="h-10 bg-secondary rounded-lg"></div>
+          }
+        </div>
+      } @else if (edades(); as data) {
+        <app-report-bar-chart
+          [items]="edadesChart()"
+          [total]="data.total"
+          [selectedId]="edadSeleccionada()"
+          [animated]="!!edades()"
+          (selectItem)="alternarEdad($event)"
+        />
+
+        @if (detalleEdad(); as detalle) {
+          <div class="mt-4 p-3 rounded-xl bg-primary-light border border-border text-sm">
+            <strong>{{ detalle.label }}:</strong>
+            {{ detalle.value }} estudiantes ({{ detalle.porcentaje }}% del total activo).
+          </div>
+        }
+      }
+    </article>
+
+    @if (auth.isAdmin()) {
+      <article class="card transition-all hover:shadow-md">
+        <div class="flex items-start justify-between gap-3 mb-4">
+          <div>
+            <h2 class="text-base font-semibold text-primary-dark m-0">Docentes por sector</h2>
+            <p class="text-xs text-muted m-0 mt-1">Pasa el cursor o selecciona un sector</p>
+          </div>
+          @if (docentes(); as data) {
+            <span class="text-sm font-semibold text-accent tabular-nums">{{ data.total }} total</span>
+          }
+        </div>
+
+        @if (cargando() && !docentes()) {
+          <div class="flex gap-6 animate-pulse">
+            <div class="w-40 h-40 rounded-full bg-secondary shrink-0"></div>
+            <div class="flex-1 space-y-3">
+              <div class="h-8 bg-secondary rounded-lg"></div>
+              <div class="h-8 bg-secondary rounded-lg"></div>
+            </div>
+          </div>
+        } @else if (docentes(); as data) {
+          <app-report-donut-chart
+            [items]="docentesChart()"
+            [selectedId]="sectorSeleccionado()"
+            (selectItem)="alternarSector($event)"
+          />
+
+          @if (detalleSector(); as detalle) {
+            <div class="mt-4 p-3 rounded-xl bg-primary-light border border-border text-sm">
+              <strong>{{ detalle.label }}:</strong>
+              {{ detalle.value }} docentes ({{ detalle.porcentaje }}% del total).
+              @if (data.publico + data.privado > data.total) {
+                <span class="block text-xs text-muted mt-1">
+                  Algunos docentes trabajan en colegios de ambos sectores.
+                </span>
+              }
+            </div>
+          }
+        }
+      </article>
+    }
+
+    <article class="card border-primary bg-gradient-to-b from-white to-primary-light transition-all hover:shadow-md hover:-translate-y-0.5">
+      <h2 class="text-base font-semibold text-primary-dark m-0 mb-3">
+        @if (auth.isAdmin()) { Colegio con más estudiantes } @else { Estudiantes activos en mi colegio }
+      </h2>
+
+      @if (colegioTop(); as data) {
+        <p class="text-2xl font-bold text-accent m-1">{{ data.colegio }}</p>
+        <p class="text-muted m-0 mb-4">{{ formatearSector(data.sector) }} · {{ data.totalEstudiantes }} estudiantes activos</p>
+
+        @if (auth.isAdmin() && edades()?.total) {
+          <div>
+            <div class="flex justify-between text-xs text-muted mb-1">
+              <span>Participación sobre el total de la ciudad</span>
+              <span class="font-semibold text-primary-dark">{{ participacionColegio() }}%</span>
+            </div>
+            <div class="h-2.5 bg-white/80 rounded-full overflow-hidden border border-border">
+              <div
+                class="h-full bg-accent rounded-full transition-all duration-700 ease-out"
+                [style.width.%]="participacionColegio()"
+              ></div>
+            </div>
+          </div>
+        }
+      } @else if (cargando()) {
+        <div class="h-16 bg-white/60 rounded-lg animate-pulse"></div>
+      } @else {
+        <p class="text-muted m-0">Sin datos de matrícula disponibles.</p>
+      }
+    </article>
+
+    <article class="card border-accent bg-accent-light transition-all hover:shadow-md">
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+        <div>
+          <h2 class="text-base font-semibold text-primary m-0">
+            Contratos por vencer (30 días) @if (!auth.isAdmin()) { en mi colegio }
+          </h2>
+          <p class="text-xs text-muted m-0 mt-1">Filtra y expande cada contrato</p>
+        </div>
+        <div class="flex flex-wrap gap-1">
+          <button
+            type="button"
+            class="text-xs px-2.5 py-1 rounded-lg border transition-colors"
+            [class.bg-white]="filtroContrato() === 'todos'"
+            [class.border-accent]="filtroContrato() === 'todos'"
+            [class.border-transparent]="filtroContrato() !== 'todos'"
+            (click)="filtrarContratos('todos')"
+          >
+            Todos
+          </button>
+          <button
+            type="button"
+            class="text-xs px-2.5 py-1 rounded-lg border transition-colors"
+            [class.bg-white]="filtroContrato() === 'urgente'"
+            [class.border-red-300]="filtroContrato() === 'urgente'"
+            [class.border-transparent]="filtroContrato() !== 'urgente'"
+            (click)="filtrarContratos('urgente')"
+          >
+            ≤7 días
+          </button>
+          <button
+            type="button"
+            class="text-xs px-2.5 py-1 rounded-lg border transition-colors"
+            [class.bg-white]="filtroContrato() === 'proximo'"
+            [class.border-amber-300]="filtroContrato() === 'proximo'"
+            [class.border-transparent]="filtroContrato() !== 'proximo'"
+            (click)="filtrarContratos('proximo')"
+          >
+            ≤14 días
+          </button>
+        </div>
+      </div>
+
+      @if (contratosFiltrados().length) {
+        <ul class="list-none p-0 m-0 space-y-2">
+          @for (c of contratosFiltrados(); track c.docenteId) {
+            <li>
+              <button
+                type="button"
+                class="w-full text-left rounded-xl border bg-white/70 px-3 py-2.5 transition-all hover:bg-white hover:shadow-sm"
+                [class.border-red-300]="urgenciaContrato(c.diasRestantes) === 'alta'"
+                [class.border-amber-300]="urgenciaContrato(c.diasRestantes) === 'media'"
+                [class.border-accent/30]="urgenciaContrato(c.diasRestantes) === 'baja'"
+                (click)="alternarContrato(c.docenteId)"
+                [attr.aria-expanded]="contratoExpandido() === c.docenteId"
+              >
+                <div class="flex items-start justify-between gap-3">
+                  <div>
+                    <strong class="text-primary-dark">{{ c.nombre }}</strong>
+                    <p class="text-sm text-muted m-0 mt-0.5">
+                      Vence {{ c.vigenciaContrato | date:'dd/MM/yyyy' }} · {{ c.diasRestantes }} días
+                    </p>
+                  </div>
+                  <span
+                    class="text-xs font-semibold px-2 py-0.5 rounded-full shrink-0"
+                    [class.bg-red-100]="urgenciaContrato(c.diasRestantes) === 'alta'"
+                    [class.text-red-800]="urgenciaContrato(c.diasRestantes) === 'alta'"
+                    [class.bg-amber-100]="urgenciaContrato(c.diasRestantes) === 'media'"
+                    [class.text-amber-900]="urgenciaContrato(c.diasRestantes) === 'media'"
+                    [class.bg-primary-light]="urgenciaContrato(c.diasRestantes) === 'baja'"
+                    [class.text-primary]="urgenciaContrato(c.diasRestantes) === 'baja'"
+                  >
+                    @switch (urgenciaContrato(c.diasRestantes)) {
+                      @case ('alta') { Urgente }
+                      @case ('media') { Próximo }
+                      @default { En plazo }
+                    }
+                  </span>
+                </div>
+
+                @if (contratoExpandido() === c.docenteId) {
+                  <div class="mt-3 pt-3 border-t border-border/60 text-sm text-muted grid gap-1">
+                    <span><strong class="text-primary-dark">Contratación:</strong> {{ c.fechaContratacion | date:'dd/MM/yyyy' }}</span>
+                    <span><strong class="text-primary-dark">Período:</strong> {{ c.periodoContrato }}</span>
+                  </div>
+                }
+              </button>
+            </li>
+          }
+        </ul>
+      } @else if (cargando()) {
+        <div class="space-y-2 animate-pulse">
+          <div class="h-14 bg-white/60 rounded-xl"></div>
+          <div class="h-14 bg-white/60 rounded-xl"></div>
+        </div>
+      } @else {
+        <p class="text-muted m-0">Sin contratos próximos a vencer para este filtro.</p>
+      }
+    </article>
+  </div>
 </section>

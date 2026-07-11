@@ -64,11 +64,14 @@ CREATE TABLE Docentes (
 
 CREATE TABLE Grupos (
     Id INT IDENTITY(1,1) PRIMARY KEY,
+    CodigoDane NVARCHAR(12) NOT NULL,
     GradoId INT NOT NULL,
     Nombre NVARCHAR(10) NOT NULL,
     DocenteDirectorId INT NULL,
+    CONSTRAINT FK_Grupos_Colegios FOREIGN KEY (CodigoDane) REFERENCES Colegios(CodigoDane),
     CONSTRAINT FK_Grupos_Grados FOREIGN KEY (GradoId) REFERENCES Grados(Id),
-    CONSTRAINT FK_Grupos_Docentes FOREIGN KEY (DocenteDirectorId) REFERENCES Docentes(Id)
+    CONSTRAINT FK_Grupos_Docentes FOREIGN KEY (DocenteDirectorId) REFERENCES Docentes(Id),
+    CONSTRAINT UQ_GrupoColegio UNIQUE (CodigoDane, GradoId, Nombre)
 );
 
 CREATE TABLE AniosAcademicos (
@@ -129,7 +132,13 @@ INSERT INTO Grados (Nombre, Orden) VALUES
 (N'2 Grado', 2),
 (N'3 Grado', 3),
 (N'4 Grado', 4),
-(N'5 Grado', 5);
+(N'5 Grado', 5),
+(N'6 Grado', 6),
+(N'7 Grado', 7),
+(N'8 Grado', 8),
+(N'9 Grado', 9),
+(N'10 Grado', 10),
+(N'11 Grado', 11);
 
 INSERT INTO AniosAcademicos (Anio) VALUES (2024), (2025), (2026);
 
@@ -140,13 +149,6 @@ INSERT INTO Docentes (Nombre, FechaContratacion, PeriodoContrato, VigenciaContra
 (N'Pedro Lopez', '2018-03-20', 'Indefinido', NULL, 1),
 (N'Laura Torres', '2022-07-01', 'Anual', '2026-12-31', 1),
 (N'Jorge Herrera', '2017-01-05', 'Indefinido', NULL, 1);
-
-INSERT INTO Grupos (GradoId, Nombre, DocenteDirectorId) VALUES
-(1, 'A', 1), (1, 'B', 2),
-(2, 'A', 3), (2, 'B', 4),
-(3, 'A', 5), (3, 'B', 6),
-(4, 'A', 1), (4, 'B', 2),
-(5, 'A', 3), (5, 'B', 4);
 
 INSERT INTO DocenteColegios (DocenteId, CodigoDane, FechaAsignacion, Activo) VALUES
 (1, N'105001000001', '2020-02-01', 1),
@@ -159,6 +161,47 @@ INSERT INTO DocenteColegios (DocenteId, CodigoDane, FechaAsignacion, Activo) VAL
 (5, N'105001000003', '2022-07-01', 1),
 (6, N'105001000002', '2017-01-05', 1),
 (6, N'105001000004', '2018-01-01', 1);
+
+-- 5 grupos por grado y por colegio; director rotado entre docentes del colegio
+;WITH Numeros AS (
+    SELECT 1 AS n UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5
+),
+GruposBase AS (
+    SELECT
+        g.Id AS GradoId,
+        g.Orden,
+        CASE
+            WHEN g.Orden = 0 THEN RIGHT('000' + CAST(n.n AS NVARCHAR(3)), 3)
+            ELSE CAST(g.Orden AS NVARCHAR(2)) + RIGHT('0' + CAST(n.n AS NVARCHAR(1)), 2)
+        END AS Nombre,
+        ROW_NUMBER() OVER (ORDER BY g.Orden, n.n) AS GrupoIdx
+    FROM Grados g
+    CROSS JOIN Numeros n
+),
+DocentesColegio AS (
+    SELECT
+        dc.CodigoDane,
+        dc.DocenteId,
+        ROW_NUMBER() OVER (PARTITION BY dc.CodigoDane ORDER BY dc.DocenteId) AS rn,
+        COUNT(*) OVER (PARTITION BY dc.CodigoDane) AS Cnt
+    FROM DocenteColegios dc
+    WHERE dc.Activo = 1
+)
+INSERT INTO Grupos (CodigoDane, GradoId, Nombre, DocenteDirectorId)
+SELECT
+    c.CodigoDane,
+    gb.GradoId,
+    gb.Nombre,
+    dc.DocenteId
+FROM Colegios c
+CROSS JOIN GruposBase gb
+OUTER APPLY (
+    SELECT d.DocenteId
+    FROM DocentesColegio d
+    WHERE d.CodigoDane = c.CodigoDane
+      AND d.Cnt > 0
+      AND d.rn = ((gb.GrupoIdx - 1) % d.Cnt) + 1
+) dc;
 
 INSERT INTO Estudiantes (Nombre, TipoDocumento, NumeroDocumento, FechaNacimiento) VALUES
 (N'Sofia Ramirez', 'RC', '1098765432', '2019-03-15'),
@@ -173,18 +216,18 @@ INSERT INTO Estudiantes (Nombre, TipoDocumento, NumeroDocumento, FechaNacimiento
 (N'Nicolas Silva', 'TI', '1002345682', '2016-08-09');
 
 INSERT INTO Matriculas (EstudianteId, CodigoDane, GradoId, GrupoId, AnioAcademicoId, Activa, FechaMatricula) VALUES
-(1, N'105001000001', 1, 1, 3, 1, '2026-01-15'),
-(2, N'105001000001', 2, 3, 3, 1, '2026-01-15'),
-(3, N'105001000002', 4, 7, 3, 1, '2026-01-20'),
-(4, N'105001000002', 5, 9, 3, 1, '2026-01-20'),
-(5, N'105001000003', 1, 2, 3, 1, '2026-01-18'),
-(6, N'105001000004', 3, 5, 3, 1, '2026-01-22'),
-(7, N'105001000005', 4, 8, 3, 1, '2026-01-10'),
-(8, N'105001000006', 5, 10, 3, 1, '2026-01-12'),
-(9, N'105001000001', 2, 4, 2, 0, '2025-01-15'),
-(9, N'105001000001', 3, 5, 3, 1, '2026-01-15'),
-(10, N'105001000002', 3, 6, 2, 0, '2025-01-20'),
-(10, N'105001000002', 4, 7, 3, 1, '2026-01-20');
+(1, N'105001000001', 1, (SELECT Id FROM Grupos WHERE CodigoDane = N'105001000001' AND GradoId = 1 AND Nombre = '001'), 3, 1, '2026-01-15'),
+(2, N'105001000001', 2, (SELECT Id FROM Grupos WHERE CodigoDane = N'105001000001' AND GradoId = 2 AND Nombre = '101'), 3, 1, '2026-01-15'),
+(3, N'105001000002', 4, (SELECT Id FROM Grupos WHERE CodigoDane = N'105001000002' AND GradoId = 4 AND Nombre = '301'), 3, 1, '2026-01-20'),
+(4, N'105001000002', 5, (SELECT Id FROM Grupos WHERE CodigoDane = N'105001000002' AND GradoId = 5 AND Nombre = '401'), 3, 1, '2026-01-20'),
+(5, N'105001000003', 1, (SELECT Id FROM Grupos WHERE CodigoDane = N'105001000003' AND GradoId = 1 AND Nombre = '002'), 3, 1, '2026-01-18'),
+(6, N'105001000004', 3, (SELECT Id FROM Grupos WHERE CodigoDane = N'105001000004' AND GradoId = 3 AND Nombre = '201'), 3, 1, '2026-01-22'),
+(7, N'105001000005', 4, (SELECT Id FROM Grupos WHERE CodigoDane = N'105001000005' AND GradoId = 4 AND Nombre = '302'), 3, 1, '2026-01-10'),
+(8, N'105001000006', 5, (SELECT Id FROM Grupos WHERE CodigoDane = N'105001000006' AND GradoId = 5 AND Nombre = '403'), 3, 1, '2026-01-12'),
+(9, N'105001000001', 2, (SELECT Id FROM Grupos WHERE CodigoDane = N'105001000001' AND GradoId = 2 AND Nombre = '102'), 2, 0, '2025-01-15'),
+(9, N'105001000001', 3, (SELECT Id FROM Grupos WHERE CodigoDane = N'105001000001' AND GradoId = 3 AND Nombre = '201'), 3, 1, '2026-01-15'),
+(10, N'105001000002', 3, (SELECT Id FROM Grupos WHERE CodigoDane = N'105001000002' AND GradoId = 3 AND Nombre = '202'), 2, 0, '2025-01-20'),
+(10, N'105001000002', 4, (SELECT Id FROM Grupos WHERE CodigoDane = N'105001000002' AND GradoId = 4 AND Nombre = '301'), 3, 1, '2026-01-20');
 
 -- Usuarios: contraseñas hasheadas con BCrypt (factor 11)
 -- admin@ciudad.edu  -> Admin123!

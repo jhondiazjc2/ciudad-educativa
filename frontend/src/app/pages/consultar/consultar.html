@@ -25,11 +25,16 @@
       />
     </label>
     <label class="label min-w-0">
-      Año
-      <app-select-field
-        [(ngModel)]="anioAcademicoId"
-        name="anioAcademicoId"
-        [options]="anioOptions"
+      Año académico
+      <input
+        class="input"
+        type="number"
+        [(ngModel)]="anio"
+        name="anio"
+        [min]="anioMin"
+        [max]="anioMax"
+        step="1"
+        required
       />
     </label>
     <button class="btn self-end" (click)="buscar()">Buscar</button>
@@ -71,7 +76,7 @@
         </tbody>
       </table>
     </div>
-  } @else if (codigoDane && gradoId && anioAcademicoId) {
+  } @else if (codigoDane && gradoId && anio) {
     <p class="text-muted">No hay estudiantes para estos filtros.</p>
   }
 
