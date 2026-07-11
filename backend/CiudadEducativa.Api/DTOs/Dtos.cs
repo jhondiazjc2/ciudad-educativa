@@ -2,7 +2,8 @@ namespace CiudadEducativa.Api.DTOs;
 
 public record CrearMatriculaRequest(
     string Nombre,
-    string NumeroMatricula,
+    string TipoDocumento,
+    string NumeroDocumento,
     DateTime FechaNacimiento,
     int ColegioId,
     int GradoId,
@@ -14,7 +15,8 @@ public record MatriculaResponse(
     int Id,
     int EstudianteId,
     string NombreEstudiante,
-    string NumeroMatricula,
+    string TipoDocumento,
+    string NumeroDocumento,
     DateTime FechaNacimiento,
     int Edad,
     int ColegioId,
@@ -79,4 +81,5 @@ public record DocenteColegioResponse(
 );
 
 public record CatalogoItem(int Id, string Nombre);
+public record CatalogoDocumentoItem(string Codigo, string Nombre);
 public record GrupoItem(int Id, string Nombre, int GradoId, string? DocenteDirector);

@@ -71,8 +71,10 @@ CREATE TABLE AniosAcademicos (
 CREATE TABLE Estudiantes (
     Id INT IDENTITY(1,1) PRIMARY KEY,
     Nombre NVARCHAR(150) NOT NULL,
-    NumeroMatricula NVARCHAR(30) NOT NULL UNIQUE,
-    FechaNacimiento DATE NOT NULL
+    TipoDocumento NVARCHAR(5) NOT NULL CHECK (TipoDocumento IN ('RC', 'TI', 'CC', 'CE', 'PA')),
+    NumeroDocumento NVARCHAR(20) NOT NULL,
+    FechaNacimiento DATE NOT NULL,
+    CONSTRAINT UQ_Estudiantes_Documento UNIQUE (TipoDocumento, NumeroDocumento)
 );
 
 CREATE TABLE Matriculas (
@@ -106,11 +108,11 @@ CREATE INDEX IX_Matriculas_Consulta ON Matriculas(ColegioId, GradoId, AnioAcadem
 CREATE INDEX IX_Matriculas_EstudianteActiva ON Matriculas(EstudianteId, Activa);
 
 INSERT INTO Colegios (Nombre, Sector) VALUES
-(N'Colegio San Jose', 'Privado'),
+(N'Colegio San José', 'Privado'),
 (N'Instituto Nacional', 'Publico'),
 (N'Colegio Los Andes', 'Privado'),
-(N'Escuela Republica de Colombia', 'Publico'),
-(N'Colegio Santa Maria', 'Privado'),
+(N'Escuela República de Colombia', 'Publico'),
+(N'Colegio Santa María', 'Privado'),
 (N'Liceo Municipal', 'Publico');
 
 INSERT INTO Grados (Nombre, Orden) VALUES
@@ -124,9 +126,9 @@ INSERT INTO Grados (Nombre, Orden) VALUES
 INSERT INTO AniosAcademicos (Anio) VALUES (2024), (2025), (2026);
 
 INSERT INTO Docentes (Nombre, FechaContratacion, PeriodoContrato, VigenciaContrato, Activo) VALUES
-(N'Maria Gonzalez', '2020-02-01', 'Indefinido', NULL, 1),
+(N'María González', '2020-02-01', 'Indefinido', NULL, 1),
 (N'Carlos Ruiz', '2019-08-15', 'Indefinido', NULL, 1),
-(N'Ana Martinez', '2021-01-10', 'Anual', '2026-07-25', 1),
+(N'Ana Martínez', '2021-01-10', 'Anual', '2026-07-25', 1),
 (N'Pedro Lopez', '2018-03-20', 'Indefinido', NULL, 1),
 (N'Laura Torres', '2022-07-01', 'Anual', '2026-12-31', 1),
 (N'Jorge Herrera', '2017-01-05', 'Indefinido', NULL, 1);
@@ -150,17 +152,17 @@ INSERT INTO DocenteColegios (DocenteId, ColegioId, FechaAsignacion, Activo) VALU
 (6, 2, '2017-01-05', 1),
 (6, 4, '2018-01-01', 1);
 
-INSERT INTO Estudiantes (Nombre, NumeroMatricula, FechaNacimiento) VALUES
-(N'Sofia Ramirez', 'MAT-001', '2019-03-15'),
-(N'Mateo Castro', 'MAT-002', '2018-07-22'),
-(N'Valentina Morales', 'MAT-003', '2015-11-08'),
-(N'Santiago Vargas', 'MAT-004', '2012-01-30'),
-(N'Isabella Rios', 'MAT-005', '2019-09-12'),
-(N'Tomas Mendez', 'MAT-006', '2017-04-05'),
-(N'Camila Ortiz', 'MAT-007', '2013-06-18'),
-(N'Daniel Paez', 'MAT-008', '2010-12-25'),
-(N'Lucia Herrera', 'MAT-009', '2018-02-14'),
-(N'Nicolas Silva', 'MAT-010', '2016-08-09');
+INSERT INTO Estudiantes (Nombre, TipoDocumento, NumeroDocumento, FechaNacimiento) VALUES
+(N'Sofia Ramirez', 'RC', '1098765432', '2019-03-15'),
+(N'Mateo Castro', 'RC', '1098765433', '2018-07-22'),
+(N'Valentina Morales', 'TI', '1002345678', '2015-11-08'),
+(N'Santiago Vargas', 'TI', '1002345679', '2012-01-30'),
+(N'Isabella Rios', 'RC', '1098765434', '2019-09-12'),
+(N'Tomás Méndez', 'TI', '1002345680', '2017-04-05'),
+(N'Camila Ortiz', 'TI', '1002345681', '2013-06-18'),
+(N'Daniel Paez', 'CC', '1020304050', '2010-12-25'),
+(N'Lucia Herrera', 'RC', '1098765435', '2018-02-14'),
+(N'Nicolas Silva', 'TI', '1002345682', '2016-08-09');
 
 INSERT INTO Matriculas (EstudianteId, ColegioId, GradoId, GrupoId, AnioAcademicoId, Activa, FechaMatricula) VALUES
 (1, 1, 1, 1, 3, 1, '2026-01-15'),

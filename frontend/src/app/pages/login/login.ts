@@ -6,8 +6,7 @@ import { AuthService } from '../../services/auth.service';
 @Component({
   selector: 'app-login',
   imports: [FormsModule],
-  templateUrl: './login.html',
-  styleUrl: './login.css'
+  templateUrl: './login.html'
 })
 export class Login {
   email = '';
@@ -32,7 +31,7 @@ export class Login {
       },
       error: () => {
         this.loading = false;
-        this.error = 'Credenciales invalidas. Verifica tu email y contraseña.';
+        this.error = 'Credenciales inválidas. Verifica tu email y contraseña.';
       }
     });
   }

@@ -3,6 +3,11 @@ export interface CatalogoItem {
   nombre: string;
 }
 
+export interface CatalogoDocumentoItem {
+  codigo: string;
+  nombre: string;
+}
+
 export interface GrupoItem {
   id: number;
   nombre: string;
@@ -12,7 +17,8 @@ export interface GrupoItem {
 
 export interface CrearMatriculaRequest {
   nombre: string;
-  numeroMatricula: string;
+  tipoDocumento: string;
+  numeroDocumento: string;
   fechaNacimiento: string;
   colegioId: number;
   gradoId: number;
@@ -24,7 +30,8 @@ export interface MatriculaResponse {
   id: number;
   estudianteId: number;
   nombreEstudiante: string;
-  numeroMatricula: string;
+  tipoDocumento: string;
+  numeroDocumento: string;
   fechaNacimiento: string;
   edad: number;
   colegioId: number;

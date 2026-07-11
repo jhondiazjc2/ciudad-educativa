@@ -15,6 +15,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
 
   return next(authReq).pipe(
     catchError((err: HttpErrorResponse) => {
+      // 401 cierra sesion salvo en login fallido (evita loop). No hay refresh token.
       if (err.status === 401 && !req.url.includes('/auth/login')) {
         auth.logout();
         router.navigate(['/login']);

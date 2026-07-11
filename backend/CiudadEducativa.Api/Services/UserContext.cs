@@ -14,6 +14,7 @@ public class UserContext(IHttpContextAccessor httpContextAccessor)
     public string? ColegioNombre => User?.FindFirstValue("colegio_nombre");
 
     public int? GetColegioFilter() => IsAdmin ? null : ColegioId;
+    // null = Admin sin filtro (toda la ciudad); int = Colegio acotado a su colegio_id del JWT.
 
     public void EnsureColegioAccess(int colegioId)
     {

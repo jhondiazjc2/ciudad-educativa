@@ -17,15 +17,31 @@ public class MatriculaService(AppDbContext db)
 
     public async Task<MatriculaResponse> CrearMatriculaAsync(CrearMatriculaRequest request)
     {
+        // Reglas de matricula:
+        // 1. El estudiante se identifica por TipoDocumento + NumeroDocumento (upsert: actualiza nombre/fecha si ya existe).
+        // 2. No puede tener matricula activa en otro colegio.
+        // 3. Al matricular, se desactivan todas las matriculas activas previas del estudiante.
+        // 4. FechaMatricula = fecha del servidor, no la envia el cliente.
+        // 5. No se permite matricula duplicada en el mismo colegio, grado y ano academico.
+        var tipoDocumento = TiposDocumento.Normalizar(request.TipoDocumento);
+        var numeroDocumento = TiposDocumento.NormalizarNumeroDocumento(request.NumeroDocumento);
+
+        if (!TiposDocumento.EsValido(tipoDocumento))
+            throw new InvalidOperationException("Tipo de documento invalido. Use RC, TI, CC, CE o PA.");
+
+        if (string.IsNullOrWhiteSpace(numeroDocumento))
+            throw new InvalidOperationException("El numero de documento es obligatorio.");
+
         var estudiante = await db.Estudiantes
-            .FirstOrDefaultAsync(e => e.NumeroMatricula == request.NumeroMatricula);
+            .FirstOrDefaultAsync(e => e.TipoDocumento == tipoDocumento && e.NumeroDocumento == numeroDocumento);
 
         if (estudiante is null)
         {
             estudiante = new Estudiante
             {
-                Nombre = request.Nombre,
-                NumeroMatricula = request.NumeroMatricula,
+                Nombre = request.Nombre.Trim(),
+                TipoDocumento = tipoDocumento,
+                NumeroDocumento = numeroDocumento,
                 FechaNacimiento = request.FechaNacimiento.Date
             };
             db.Estudiantes.Add(estudiante);
@@ -33,7 +49,7 @@ public class MatriculaService(AppDbContext db)
         }
         else
         {
-            estudiante.Nombre = request.Nombre;
+            estudiante.Nombre = request.Nombre.Trim();
             estudiante.FechaNacimiento = request.FechaNacimiento.Date;
         }
 
@@ -41,7 +57,34 @@ public class MatriculaService(AppDbContext db)
             .AnyAsync(m => m.EstudianteId == estudiante.Id && m.Activa && m.ColegioId != request.ColegioId);
 
         if (matriculaActivaOtroColegio)
-            throw new InvalidOperationException("El estudiante ya tiene una matricula activa en otro colegio.");
+            throw new InvalidOperationException("El estudiante ya tiene una matrícula activa en otro colegio.");
+
+        var matriculaMismoPeriodo = await db.Matriculas
+            .FirstOrDefaultAsync(m =>
+                m.EstudianteId == estudiante.Id &&
+                m.ColegioId == request.ColegioId &&
+                m.GradoId == request.GradoId &&
+                m.AnioAcademicoId == request.AnioAcademicoId);
+
+        if (matriculaMismoPeriodo is not null)
+        {
+            if (matriculaMismoPeriodo.Activa)
+                throw new InvalidOperationException(
+                    "El estudiante ya está matriculado en este colegio, grado y año académico.");
+
+            var otrasActivas = await db.Matriculas
+                .Where(m => m.EstudianteId == estudiante.Id && m.Activa)
+                .ToListAsync();
+
+            foreach (var m in otrasActivas)
+                m.Activa = false;
+
+            matriculaMismoPeriodo.Activa = true;
+            matriculaMismoPeriodo.GrupoId = request.GrupoId;
+            matriculaMismoPeriodo.FechaMatricula = DateTime.Today;
+            await db.SaveChangesAsync();
+            return (await ObtenerMatriculaPorIdAsync(matriculaMismoPeriodo.Id))!;
+        }
 
         var matriculasActivas = await db.Matriculas
             .Where(m => m.EstudianteId == estudiante.Id && m.Activa)
@@ -75,7 +118,7 @@ public class MatriculaService(AppDbContext db)
             .Include(m => m.Grado)
             .Include(m => m.Grupo).ThenInclude(g => g.DocenteDirector)
             .Include(m => m.AnioAcademico)
-            .Where(m => m.ColegioId == colegioId && m.GradoId == gradoId && m.AnioAcademicoId == anioAcademicoId)
+            .Where(m => m.ColegioId == colegioId && m.GradoId == gradoId && m.AnioAcademicoId == anioAcademicoId && m.Activa)
             .OrderBy(m => m.Estudiante.Nombre)
             .Select(m => MapToResponse(m))
             .ToListAsync();
@@ -107,6 +150,7 @@ public class MatriculaService(AppDbContext db)
         if (colegioId.HasValue)
             query = query.Where(m => m.ColegioId == colegioId.Value);
 
+        // Solo matriculas activas. Distinct por fecha de nacimiento: cada fecha unica cuenta una vez en los rangos.
         var fechasNacimiento = await query
             .Select(m => m.Estudiante.FechaNacimiento)
             .Distinct()
@@ -122,6 +166,7 @@ public class MatriculaService(AppDbContext db)
     }
 
     public async Task<bool> EstudiantePerteneceAColegioAsync(int estudianteId, int colegioId)
+        // Cualquier matricula (activa o historica) vincula al estudiante con el colegio.
         => await db.Matriculas.AnyAsync(m => m.EstudianteId == estudianteId && m.ColegioId == colegioId);
 
     public async Task<ColegioMayorMatriculaResponse?> ObtenerColegioMayorMatriculaAsync(int? colegioId = null)
@@ -158,7 +203,8 @@ public class MatriculaService(AppDbContext db)
         m.Id,
         m.EstudianteId,
         m.Estudiante.Nombre,
-        m.Estudiante.NumeroMatricula,
+        m.Estudiante.TipoDocumento,
+        m.Estudiante.NumeroDocumento,
         m.Estudiante.FechaNacimiento,
         CalcularEdad(m.Estudiante.FechaNacimiento),
         m.ColegioId,
@@ -230,6 +276,7 @@ public class DocenteService(AppDbContext db)
 
     public async Task<DocenteColegioResponse> AsignarDocenteAsync(AsignarDocenteRequest request)
     {
+        // Indice unico (DocenteId, ColegioId): si ya existe la pareja, se reactiva en lugar de insertar duplicado.
         var existe = await db.DocenteColegios
             .FirstOrDefaultAsync(dc => dc.DocenteId == request.DocenteId && dc.ColegioId == request.ColegioId);
 

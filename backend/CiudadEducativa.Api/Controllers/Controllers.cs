@@ -19,7 +19,7 @@ public class MatriculasController(MatriculaService service, UserContext user) : 
         {
             user.EnsureColegioAccess(request.ColegioId);
             var result = await service.CrearMatriculaAsync(request);
-            return CreatedAtAction(nameof(Crear), result);
+            return StatusCode(StatusCodes.Status201Created, result);
         }
         catch (UnauthorizedAccessException)
         {
@@ -58,6 +58,7 @@ public class EstudiantesController(MatriculaService service, UserContext user) :
     [HttpGet("{id}/historico")]
     public async Task<ActionResult<List<HistoricoEstudianteResponse>>> Historico(int id)
     {
+        // Admin ve todo. Colegio solo si el estudiante tuvo alguna matricula en su colegio (activa o historica).
         if (!user.IsAdmin)
         {
             var colegioId = user.RequireColegioId();
@@ -82,6 +83,7 @@ public class ConsultasController(MatriculaService matriculaService, DocenteServi
     [Authorize(Roles = "Admin")]
     [HttpGet("docentes-por-sector")]
     public async Task<ActionResult<DocentesPorSectorResponse>> DocentesPorSector()
+        // Consulta de toda la ciudad; restringida a rol Admin.
         => Ok(await docenteService.ObtenerDocentesPorSectorAsync());
 
     [HttpGet("colegio-mayor-matricula")]
@@ -164,6 +166,17 @@ public class CatalogosController(AppDbContext db, UserContext user) : Controller
     public async Task<ActionResult<List<CatalogoItem>>> Anios()
         => Ok(await db.AniosAcademicos.OrderByDescending(a => a.Anio)
             .Select(a => new CatalogoItem(a.Id, a.Anio.ToString())).ToListAsync());
+
+    [HttpGet("tipos-documento")]
+    public ActionResult<List<CatalogoDocumentoItem>> TiposDocumento()
+        => Ok(new List<CatalogoDocumentoItem>
+        {
+            new("RC", "Registro civil"),
+            new("TI", "Tarjeta de identidad"),
+            new("CC", "Cedula de ciudadania"),
+            new("CE", "Cedula de extranjeria"),
+            new("PA", "Pasaporte")
+        });
 
     [HttpGet("docentes")]
     public async Task<ActionResult<List<CatalogoItem>>> Docentes()

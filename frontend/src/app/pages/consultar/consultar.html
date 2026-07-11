@@ -1,73 +1,70 @@
-<section class="page">
-  <header class="page-header">
-    <h1>Consultar estudiantes</h1>
-    <p>Filtra por colegio, grado y ano academico</p>
+<section>
+  <header class="mb-6">
+    <h1 class="text-3xl font-bold text-primary-dark m-0 mb-1">Consultar estudiantes</h1>
+    <p class="text-muted m-0">Filtra por colegio, grado y año académico</p>
   </header>
 
-  @if (error) { <div class="alert">{{ error }}</div> }
+  @if (error) { <div class="alert-error">{{ error }}</div> }
 
-  <div class="filters form-card">
-    <label>
+  <div class="filter-panel grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-start mb-6">
+    <label class="label min-w-0">
       Colegio
-      <select [(ngModel)]="colegioId" [disabled]="colegioBloqueado">
-        <option [ngValue]="0">Seleccionar...</option>
-        @for (c of colegios; track c.id) {
-          <option [ngValue]="c.id">{{ c.nombre }}</option>
-        }
-      </select>
+      <app-select-field
+        [(ngModel)]="colegioId"
+        name="colegioId"
+        [options]="colegioOptions"
+        [disabled]="colegioBloqueado"
+      />
     </label>
-    <label>
+    <label class="label min-w-0">
       Grado
-      <select [(ngModel)]="gradoId">
-        <option [ngValue]="0">Seleccionar...</option>
-        @for (g of grados; track g.id) {
-          <option [ngValue]="g.id">{{ g.nombre }}</option>
-        }
-      </select>
+      <app-select-field
+        [(ngModel)]="gradoId"
+        name="gradoId"
+        [options]="gradoOptions"
+      />
     </label>
-    <label>
-      Ano
-      <select [(ngModel)]="anioAcademicoId">
-        <option [ngValue]="0">Seleccionar...</option>
-        @for (a of anios; track a.id) {
-          <option [ngValue]="a.id">{{ a.nombre }}</option>
-        }
-      </select>
+    <label class="label min-w-0">
+      Año
+      <app-select-field
+        [(ngModel)]="anioAcademicoId"
+        name="anioAcademicoId"
+        [options]="anioOptions"
+      />
     </label>
-    <button class="btn" (click)="buscar()">Buscar</button>
+    <button class="btn self-end" (click)="buscar()">Buscar</button>
   </div>
 
   @if (resultados.length) {
-    <div class="table-wrap">
-      <table>
+    <div class="overflow-x-auto mb-6">
+      <table class="w-full border-collapse bg-white border border-border rounded-xl overflow-hidden">
         <thead>
-          <tr>
-            <th>Estudiante</th>
-            <th>Matricula</th>
-            <th>Edad</th>
-            <th>Grupo</th>
-            <th>Docente</th>
-            <th>Estado</th>
-            <th></th>
+          <tr class="bg-secondary text-primary-dark text-xs uppercase tracking-wide">
+            <th class="px-4 py-3 text-left">Estudiante</th>
+            <th class="px-4 py-3 text-left">Documento</th>
+            <th class="px-4 py-3 text-left">Edad</th>
+            <th class="px-4 py-3 text-left">Grupo</th>
+            <th class="px-4 py-3 text-left">Docente</th>
+            <th class="px-4 py-3 text-left">Estado</th>
+            <th class="px-4 py-3 text-left"></th>
           </tr>
         </thead>
         <tbody>
           @for (r of resultados; track r.id) {
-            <tr>
-              <td>{{ r.nombreEstudiante }}</td>
-              <td>{{ r.numeroMatricula }}</td>
-              <td>{{ r.edad }}</td>
-              <td>{{ r.grupoNombre }}</td>
-              <td>{{ r.docenteDirector ?? '—' }}</td>
-              <td>
-                <span class="badge" [class.active]="r.activa">
-                  {{ r.activa ? 'Activa' : 'Historica' }}
+            <tr class="border-t border-border">
+              <td class="px-4 py-3">{{ r.nombreEstudiante }}</td>
+              <td class="px-4 py-3">{{ r.tipoDocumento }} {{ r.numeroDocumento }}</td>
+              <td class="px-4 py-3">{{ r.edad }}</td>
+              <td class="px-4 py-3">{{ r.grupoNombre }}</td>
+              <td class="px-4 py-3">{{ r.docenteDirector ?? '—' }}</td>
+              <td class="px-4 py-3">
+                <span class="inline-block px-2 py-0.5 rounded-full text-xs font-semibold"
+                  [class]="r.activa ? 'bg-primary-light text-primary-dark' : 'bg-secondary-dark text-muted'">
+                  {{ r.activa ? 'Activa' : 'Histórica' }}
                 </span>
               </td>
-              <td>
-                <button class="btn link" (click)="verHistorico(r.estudianteId, r.nombreEstudiante)">
-                  Historico
-                </button>
+              <td class="px-4 py-3">
+                <button class="btn-link" (click)="verHistorico(r.estudianteId, r.nombreEstudiante)">Histórico</button>
               </td>
             </tr>
           }
@@ -75,36 +72,38 @@
       </table>
     </div>
   } @else if (colegioId && gradoId && anioAcademicoId) {
-    <p class="muted">No hay estudiantes para estos filtros.</p>
+    <p class="text-muted">No hay estudiantes para estos filtros.</p>
   }
 
   @if (historico.length) {
-    <div class="form-card historico">
-      <h2>Historico de {{ estudianteSeleccionado }}</h2>
-      <table>
-        <thead>
-          <tr>
-            <th>Ano</th>
-            <th>Grado</th>
-            <th>Grupo</th>
-            <th>Colegio</th>
-            <th>Docente</th>
-            <th>Estado</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (h of historico; track h.anio) {
-            <tr>
-              <td>{{ h.anio }}</td>
-              <td>{{ h.grado }}</td>
-              <td>{{ h.grupo }}</td>
-              <td>{{ h.colegio }}</td>
-              <td>{{ h.docenteDirector ?? '—' }}</td>
-              <td>{{ h.activa ? 'Actual' : 'Anterior' }}</td>
+    <div class="card mt-4">
+      <h2 class="text-lg font-semibold text-primary-dark mb-4">Histórico de {{ estudianteSeleccionado }}</h2>
+      <div class="overflow-x-auto">
+        <table class="w-full border-collapse">
+          <thead>
+            <tr class="bg-secondary text-primary-dark text-xs uppercase tracking-wide">
+              <th class="px-4 py-3 text-left">Año</th>
+              <th class="px-4 py-3 text-left">Grado</th>
+              <th class="px-4 py-3 text-left">Grupo</th>
+              <th class="px-4 py-3 text-left">Colegio</th>
+              <th class="px-4 py-3 text-left">Docente</th>
+              <th class="px-4 py-3 text-left">Estado</th>
             </tr>
-          }
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            @for (h of historico; track h.anio) {
+              <tr class="border-t border-border">
+                <td class="px-4 py-3">{{ h.anio }}</td>
+                <td class="px-4 py-3">{{ h.grado }}</td>
+                <td class="px-4 py-3">{{ h.grupo }}</td>
+                <td class="px-4 py-3">{{ h.colegio }}</td>
+                <td class="px-4 py-3">{{ h.docenteDirector ?? '—' }}</td>
+                <td class="px-4 py-3">{{ h.activa ? 'Actual' : 'Anterior' }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
     </div>
   }
 </section>

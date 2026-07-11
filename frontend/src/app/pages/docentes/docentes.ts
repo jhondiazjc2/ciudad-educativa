@@ -4,13 +4,17 @@ import { ApiService } from '../../services/api.service';
 import { AuthService } from '../../services/auth.service';
 import { CatalogoItem, DocenteColegio } from '../../models';
 
+import { formatearSector } from '../../utils/texto';
+
+import { SelectField, toSelectOptions } from '../../components/select-field/select-field';
+
 @Component({
   selector: 'app-docentes',
-  imports: [FormsModule],
-  templateUrl: './docentes.html',
-  styleUrl: './docentes.css'
+  imports: [FormsModule, SelectField],
+  templateUrl: './docentes.html'
 })
 export class Docentes implements OnInit {
+  protected readonly formatearSector = formatearSector;
   docentes: CatalogoItem[] = [];
   colegios: CatalogoItem[] = [];
   asignaciones: DocenteColegio[] = [];
@@ -23,13 +27,21 @@ export class Docentes implements OnInit {
 
   constructor(private api: ApiService, private auth: AuthService) {}
 
+  get docenteOptions() {
+    return toSelectOptions(this.docentes);
+  }
+
+  get colegioOptions() {
+    return toSelectOptions(this.colegios);
+  }
+
   ngOnInit(): void {
     this.api.getDocentes().subscribe((d) => (this.docentes = d));
     this.api.getColegios().subscribe((d) => {
       this.colegios = d;
       if (this.auth.isColegio() && this.auth.getColegioId()) {
         this.colegioId = this.auth.getColegioId()!;
-        this.colegioBloqueado = true;
+        this.colegioBloqueado = true; // Mismo patron que matricular: UI + validacion 403 en API.
       }
     });
     this.cargarAsignaciones();
@@ -66,7 +78,7 @@ export class Docentes implements OnInit {
   quitar(id: number): void {
     this.api.desactivarAsignacion(id).subscribe({
       next: () => this.cargarAsignaciones(),
-      error: () => (this.error = 'No tiene permiso para quitar esta asignacion.')
+      error: () => (this.error = 'No tiene permiso para quitar esta asignación.')
     });
   }
 }

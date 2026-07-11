@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { Inicio } from './pages/inicio/inicio';
 import { Reportes } from './pages/reportes/reportes';
 import { Matricular } from './pages/matricular/matricular';
 import { Consultar } from './pages/consultar/consultar';
@@ -8,7 +9,8 @@ import { authGuard, guestGuard } from './guards/auth.guard';
 
 export const routes: Routes = [
   { path: 'login', component: Login, canActivate: [guestGuard] },
-  { path: '', component: Reportes, canActivate: [authGuard] },
+  { path: '', component: Inicio, canActivate: [authGuard] },
+  { path: 'reportes', component: Reportes, canActivate: [authGuard] },
   { path: 'matricular', component: Matricular, canActivate: [authGuard] },
   { path: 'consultar', component: Consultar, canActivate: [authGuard] },
   { path: 'docentes', component: Docentes, canActivate: [authGuard] },

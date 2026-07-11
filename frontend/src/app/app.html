@@ -1,27 +1,31 @@
 @if (auth.isLoggedIn()) {
-  <div class="layout">
-    <nav class="navbar">
-      <div class="brand">
-        <span class="logo">CE</span>
-        <div>
-          <strong>Ciudad Educativa</strong>
-          <small>Gestion de matriculas</small>
-        </div>
+  <div class="min-h-screen">
+    <nav class="sticky top-0 z-10 flex flex-wrap justify-between items-center gap-4 px-8 py-4 bg-white border-b border-border shadow-sm">
+      <div class="flex items-center gap-3">
+        <img
+          src="/CiudadEducativalogo.png"
+          alt="Ciudad Educativa"
+          width="176"
+          height="44"
+          class="h-11 w-auto object-contain"
+        />
+        <small class="text-muted text-xs hidden sm:block">Gestión de matrículas</small>
       </div>
-      <div class="nav-right">
-        <div class="nav-links">
-          <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Reportes</a>
-          <a routerLink="/matricular" routerLinkActive="active">Matricular</a>
-          <a routerLink="/consultar" routerLinkActive="active">Consultar</a>
-          <a routerLink="/docentes" routerLinkActive="active">Docentes</a>
+      <div class="flex flex-wrap items-center gap-6">
+        <div class="flex flex-wrap gap-1">
+          <a routerLink="/" routerLinkActive="nav-link-active" [routerLinkActiveOptions]="{ exact: true }" class="nav-link">Inicio</a>
+          <a routerLink="/reportes" routerLinkActive="nav-link-active" class="nav-link">Reportes</a>
+          <a routerLink="/matricular" routerLinkActive="nav-link-active" class="nav-link">Matricular</a>
+          <a routerLink="/consultar" routerLinkActive="nav-link-active" class="nav-link">Consultar</a>
+          <a routerLink="/docentes" routerLinkActive="nav-link-active" class="nav-link">Docentes</a>
         </div>
-        <div class="user-menu">
+        <div class="flex items-center gap-3 text-sm text-muted">
           <span>{{ auth.user()?.nombre }} ({{ auth.user()?.rol }}@if (auth.user()?.colegioNombre) { · {{ auth.user()?.colegioNombre }}})</span>
-          <button class="btn secondary" (click)="logout()">Salir</button>
+          <button class="btn-secondary text-sm py-2 px-3" (click)="logout()">Salir</button>
         </div>
       </div>
     </nav>
-    <main class="content">
+    <main class="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8 overflow-visible">
       <router-outlet />
     </main>
   </div>

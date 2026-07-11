@@ -12,14 +12,16 @@ public class AuthService(AppDbContext db, IConfiguration config)
 {
     public async Task<LoginResponse?> LoginAsync(LoginRequest request)
     {
+        // Email normalizado: login case-insensitive; los emails en BD deben guardarse en minusculas.
         var email = request.Email.Trim().ToLowerInvariant();
         var usuario = await db.Usuarios
             .Include(u => u.Colegio)
             .FirstOrDefaultAsync(u => u.Email == email && u.Activo);
 
         if (usuario is null || !BCrypt.Net.BCrypt.Verify(request.Password, usuario.PasswordHash))
-            return null;
+            return null; // Mismo resultado que usuario inexistente: evita enumeracion de cuentas.
 
+        // Rol Colegio exige ColegioId; sin el, el login falla aunque la contraseña sea correcta.
         if (usuario.Rol == "Colegio" && usuario.ColegioId is null)
             return null;
 
@@ -52,6 +54,7 @@ public class AuthService(AppDbContext db, IConfiguration config)
 
         if (usuario.ColegioId.HasValue)
         {
+            // Claims custom consumidos por UserContext; los nombres deben coincidir con colegio_id / colegio_nombre.
             claims.Add(new Claim("colegio_id", usuario.ColegioId.Value.ToString()));
             if (!string.IsNullOrEmpty(usuario.Colegio?.Nombre))
                 claims.Add(new Claim("colegio_nombre", usuario.Colegio.Nombre));

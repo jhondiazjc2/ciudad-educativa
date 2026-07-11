@@ -1,33 +1,44 @@
-<section class="login-page">
-  <div class="login-card">
-    <div class="login-brand">
-      <span class="logo">CE</span>
-      <h1>Ciudad Educativa</h1>
-      <p>Ingresa para gestionar matriculas</p>
+<section
+  class="relative min-h-screen grid place-items-center p-4 sm:p-6 bg-cover bg-center bg-no-repeat"
+  style="background-image: url('/CiudadEducativa.png')"
+>
+  <div class="absolute inset-0 bg-primary-dark/45" aria-hidden="true"></div>
+
+  <div class="relative z-10 w-full max-w-md bg-white/95 backdrop-blur-sm border border-white/60 rounded-2xl shadow-2xl overflow-hidden">    <div class="p-8">
+      <div class="text-center mb-6">
+        <img
+          src="/CiudadEducativalogo.png"
+          alt="Ciudad Educativa — Educación que construye futuro"
+          width="288"
+          height="144"
+          class="mx-auto h-36 w-auto object-contain mb-4"
+        />
+        <p class="text-muted m-0">Ingresa para gestionar matrículas</p>
+      </div>
+
+      @if (error) {
+        <div class="alert-error">{{ error }}</div>
+      }
+
+      <form class="flex flex-col gap-4" (ngSubmit)="ingresar()">
+        <label class="label">
+          Email
+          <input class="input" type="email" [(ngModel)]="email" name="email" autocomplete="username" required />
+        </label>
+        <label class="label">
+          Contraseña
+          <input class="input" type="password" [(ngModel)]="password" name="password" autocomplete="current-password" required />
+        </label>
+        <button class="btn w-full" type="submit" [disabled]="loading">
+          {{ loading ? 'Ingresando...' : 'Ingresar' }}
+        </button>
+      </form>
     </div>
 
-    @if (error) {
-      <div class="alert">{{ error }}</div>
-    }
-
-    <form (ngSubmit)="ingresar()">
-      <label>
-        Email
-        <input type="email" [(ngModel)]="email" name="email" autocomplete="username" required />
-      </label>
-      <label>
-        Contraseña
-        <input type="password" [(ngModel)]="password" name="password" autocomplete="current-password" required />
-      </label>
-      <button class="btn" type="submit" [disabled]="loading">
-        {{ loading ? 'Ingresando...' : 'Ingresar' }}
-      </button>
-    </form>
-
-    <div class="demo-users">
-      <p><strong>Usuarios de prueba:</strong></p>
-      <p>admin@ciudad.edu / Admin123!</p>
-      <p>colegio@ciudad.edu / Colegio123! (Colegio San Jose)</p>
+    <div class="bg-primary-light/80 px-8 py-4 border-t border-border text-sm text-muted">
+      <p class="font-semibold text-primary-dark m-0 mb-1">Usuarios de prueba:</p>
+      <p class="m-0">admin@ciudad.edu / Admin123!</p>
+      <p class="m-0">colegio@ciudad.edu / Colegio123! (Colegio San José)</p>
     </div>
   </div>
 </section>

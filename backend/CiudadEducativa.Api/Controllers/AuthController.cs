@@ -17,8 +17,9 @@ public class AuthController(AuthService authService) : ControllerBase
             return BadRequest(new { message = "Email y contraseña son obligatorios." });
 
         var result = await authService.LoginAsync(request);
+        // Mensaje generico en fallo: no distingue email inexistente de contraseña incorrecta.
         return result is null
-            ? Unauthorized(new { message = "Credenciales invalidas." })
+            ? Unauthorized(new { message = "Credenciales inválidas." })
             : Ok(result);
     }
 }

@@ -48,8 +48,9 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         {
             e.ToTable("Estudiantes");
             e.Property(x => x.Nombre).HasMaxLength(150);
-            e.Property(x => x.NumeroMatricula).HasMaxLength(30);
-            e.HasIndex(x => x.NumeroMatricula).IsUnique();
+            e.Property(x => x.TipoDocumento).HasMaxLength(5);
+            e.Property(x => x.NumeroDocumento).HasMaxLength(20);
+            e.HasIndex(x => new { x.TipoDocumento, x.NumeroDocumento }).IsUnique();
         });
 
         modelBuilder.Entity<Docente>(e =>

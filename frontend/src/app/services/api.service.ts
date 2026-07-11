@@ -3,6 +3,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import {
   AsignarDocenteRequest,
   CatalogoItem,
+  CatalogoDocumentoItem,
   ColegioMayorMatricula,
   ContratoPorVencer,
   CrearMatriculaRequest,
@@ -36,6 +37,10 @@ export class ApiService {
 
   getAnios() {
     return this.http.get<CatalogoItem[]>(`${API}/catalogos/anios`);
+  }
+
+  getTiposDocumento() {
+    return this.http.get<CatalogoDocumentoItem[]>(`${API}/catalogos/tipos-documento`);
   }
 
   getDocentes() {

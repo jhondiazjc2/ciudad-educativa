@@ -1,69 +1,79 @@
-<section class="page">
-  <header class="page-header">
-    <h1>@if (auth.isAdmin()) { Reportes de la Ciudad } @else { Reportes de {{ auth.user()?.colegioNombre }} }</h1>
-    <p>@if (auth.isAdmin()) { Consultas analiticas de toda la ciudad } @else { Consultas de su colegio }</p>
+<section>
+  <header class="mb-6">
+    <h1 class="text-3xl font-bold text-primary-dark m-0 mb-1">
+      @if (auth.isAdmin()) { Reportes de la Ciudad } @else { Reportes de {{ auth.user()?.colegioNombre }} }
+    </h1>
+    <p class="text-muted m-0">
+      @if (auth.isAdmin()) { Consultas analíticas de toda la ciudad } @else { Consultas de su colegio }
+    </p>
   </header>
 
-  @if (error) {
-    <div class="alert">{{ error }}</div>
+  @if (error()) {
+    <div class="alert-error">{{ error() }}</div>
   }
 
-  <div class="cards">
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4 mb-6">
     <article class="card">
-      <h2>@if (auth.isAdmin()) { Estudiantes por edad (ciudad) } @else { Estudiantes por edad (mi colegio) }</h2>
-      @if (edades) {
-        <ul>
-          <li><strong>3 - 7 anos:</strong> {{ edades.entre3y7 }}</li>
-          <li><strong>8 - 12 anos:</strong> {{ edades.entre8y12 }}</li>
-          <li><strong>Mayores de 12:</strong> {{ edades.mayoresDe12 }}</li>
-          <li class="total"><strong>Total activos:</strong> {{ edades.total }}</li>
+      <h2 class="text-base font-semibold text-primary-dark m-0 mb-3">
+        @if (auth.isAdmin()) { Estudiantes por edad (ciudad) } @else { Estudiantes por edad (mi colegio) }
+      </h2>
+      @if (edades(); as data) {
+        <ul class="list-none p-0 m-0 space-y-1">
+          <li class="py-1 border-b border-border"><strong>3 - 7 años:</strong> {{ data.entre3y7 }}</li>
+          <li class="py-1 border-b border-border"><strong>8 - 12 años:</strong> {{ data.entre8y12 }}</li>
+          <li class="py-1 border-b border-border"><strong>Mayores de 12:</strong> {{ data.mayoresDe12 }}</li>
+          <li class="py-1 text-primary font-semibold"><strong>Total activos:</strong> {{ data.total }}</li>
         </ul>
       } @else {
-        <p class="muted">Cargando...</p>
+        <p class="text-muted">Cargando...</p>
       }
     </article>
 
     @if (auth.isAdmin()) {
       <article class="card">
-        <h2>Docentes por sector</h2>
-        @if (docentes) {
-          <ul>
-            <li><strong>Publico:</strong> {{ docentes.publico }}</li>
-            <li><strong>Privado:</strong> {{ docentes.privado }}</li>
-            <li class="total"><strong>Total docentes:</strong> {{ docentes.total }}</li>
+        <h2 class="text-base font-semibold text-primary-dark m-0 mb-3">Docentes por sector</h2>
+        @if (docentes(); as data) {
+          <ul class="list-none p-0 m-0 space-y-1">
+            <li class="py-1 border-b border-border"><strong>Público:</strong> {{ data.publico }}</li>
+            <li class="py-1 border-b border-border"><strong>Privado:</strong> {{ data.privado }}</li>
+            <li class="py-1 text-primary font-semibold"><strong>Total docentes:</strong> {{ data.total }}</li>
           </ul>
         } @else {
-          <p class="muted">Cargando...</p>
+          <p class="text-muted">Cargando...</p>
         }
       </article>
     }
 
-    <article class="card highlight">
-      <h2>@if (auth.isAdmin()) { Colegio con mas estudiantes } @else { Estudiantes activos en mi colegio }</h2>
-      @if (colegioTop) {
-        <p class="big">{{ colegioTop.colegio }}</p>
-        <p>{{ colegioTop.sector }} · {{ colegioTop.totalEstudiantes }} estudiantes activos</p>
+    <article class="card border-primary bg-gradient-to-b from-white to-primary-light">
+      <h2 class="text-base font-semibold text-primary-dark m-0 mb-3">
+        @if (auth.isAdmin()) { Colegio con más estudiantes } @else { Estudiantes activos en mi colegio }
+      </h2>
+      @if (colegioTop(); as data) {
+        <p class="text-2xl font-bold text-accent m-1">{{ data.colegio }}</p>
+        <p class="text-muted m-0">{{ formatearSector(data.sector) }} · {{ data.totalEstudiantes }} estudiantes activos</p>
       } @else {
-        <p class="muted">Cargando...</p>
+        <p class="text-muted">Cargando...</p>
       }
     </article>
 
-    <article class="card alert-card">
-      <h2>Contratos por vencer (30 dias) @if (!auth.isAdmin()) { en mi colegio }</h2>
-      @if (contratosPorVencer.length) {
-        <ul>
-          @for (c of contratosPorVencer; track c.docenteId) {
-            <li>
+    <article class="card border-accent bg-accent-light">
+      <h2 class="text-base font-semibold text-primary m-0 mb-3">
+        Contratos por vencer (30 días) @if (!auth.isAdmin()) { en mi colegio }
+      </h2>
+      @if (contratosPorVencer().length) {
+        <ul class="list-none p-0 m-0 space-y-2">
+          @for (c of contratosPorVencer(); track c.docenteId) {
+            <li class="py-1 border-b border-accent/30">
               <strong>{{ c.nombre }}</strong> — vence {{ c.vigenciaContrato | date:'dd/MM/yyyy' }}
-              ({{ c.diasRestantes }} dias)
+              ({{ c.diasRestantes }} días)
             </li>
           }
         </ul>
       } @else {
-        <p class="muted">Sin contratos proximos a vencer.</p>
+        <p class="text-muted">Sin contratos próximos a vencer.</p>
       }
     </article>
   </div>
 
-  <button class="btn secondary" (click)="cargar()">Actualizar reportes</button>
+  <button class="btn-secondary" (click)="cargar()">Actualizar reportes</button>
 </section>

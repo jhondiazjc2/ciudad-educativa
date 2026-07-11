@@ -1,55 +1,54 @@
-<section class="page">
-  <header class="page-header">
-    <h1>Asignar docentes</h1>
-    <p>Un docente puede trabajar en varios colegios simultaneamente</p>
+<section>
+  <header class="mb-6">
+    <h1 class="text-3xl font-bold text-primary-dark m-0 mb-1">Asignar docentes</h1>
+    <p class="text-muted m-0">Un docente puede trabajar en varios colegios simultáneamente</p>
   </header>
 
-  @if (mensaje) { <div class="alert success">{{ mensaje }}</div> }
-  @if (error) { <div class="alert">{{ error }}</div> }
+  @if (mensaje) { <div class="alert-success">{{ mensaje }}</div> }
+  @if (error) { <div class="alert-error">{{ error }}</div> }
 
-  <div class="form-card assign-form">
-    <label>
+  <div class="filter-panel grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 items-start mb-6">
+    <label class="label min-w-0">
       Docente
-      <select [(ngModel)]="docenteId">
-        <option [ngValue]="0">Seleccionar...</option>
-        @for (d of docentes; track d.id) {
-          <option [ngValue]="d.id">{{ d.nombre }}</option>
-        }
-      </select>
+      <app-select-field
+        [(ngModel)]="docenteId"
+        name="docenteId"
+        [options]="docenteOptions"
+      />
     </label>
-    <label>
+    <label class="label min-w-0">
       Colegio
-      <select [(ngModel)]="colegioId" [disabled]="colegioBloqueado">
-        <option [ngValue]="0">Seleccionar...</option>
-        @for (c of colegios; track c.id) {
-          <option [ngValue]="c.id">{{ c.nombre }}</option>
-        }
-      </select>
+      <app-select-field
+        [(ngModel)]="colegioId"
+        name="colegioId"
+        [options]="colegioOptions"
+        [disabled]="colegioBloqueado"
+      />
     </label>
-    <button class="btn" (click)="asignar()">Asignar docente</button>
+    <button class="btn self-end" (click)="asignar()">Asignar docente</button>
   </div>
 
-  <div class="table-wrap">
-    <table>
+  <div class="overflow-x-auto">
+    <table class="w-full border-collapse bg-white border border-border rounded-xl overflow-hidden">
       <thead>
-        <tr>
-          <th>Docente</th>
-          <th>Colegio</th>
-          <th>Sector</th>
-          <th>Estado</th>
-          <th></th>
+        <tr class="bg-secondary text-primary-dark text-xs uppercase tracking-wide">
+          <th class="px-4 py-3 text-left">Docente</th>
+          <th class="px-4 py-3 text-left">Colegio</th>
+          <th class="px-4 py-3 text-left">Sector</th>
+          <th class="px-4 py-3 text-left">Estado</th>
+          <th class="px-4 py-3 text-left"></th>
         </tr>
       </thead>
       <tbody>
         @for (a of asignaciones; track a.id) {
-          <tr>
-            <td>{{ a.docenteNombre }}</td>
-            <td>{{ a.colegioNombre }}</td>
-            <td>{{ a.sector }}</td>
-            <td>{{ a.activo ? 'Activo' : 'Inactivo' }}</td>
-            <td>
+          <tr class="border-t border-border">
+            <td class="px-4 py-3">{{ a.docenteNombre }}</td>
+            <td class="px-4 py-3">{{ a.colegioNombre }}</td>
+            <td class="px-4 py-3">{{ formatearSector(a.sector) }}</td>
+            <td class="px-4 py-3">{{ a.activo ? 'Activo' : 'Inactivo' }}</td>
+            <td class="px-4 py-3">
               @if (a.activo) {
-                <button class="btn link danger" (click)="quitar(a.id)">Quitar</button>
+                <button class="btn-link text-red-700 hover:text-red-900" (click)="quitar(a.id)">Quitar</button>
               }
             </td>
           </tr>

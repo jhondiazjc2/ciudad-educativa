@@ -1,112 +1,99 @@
-:root {
-  --primary: #2563eb;
-  --text: #0f172a;
-  --muted: #64748b;
-  --border: #e2e8f0;
-  --surface: #ffffff;
-  --bg: #f1f5f9;
-  --success: #166534;
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #002D56;
+  --color-primary-dark: #001A33;
+  --color-primary-light: #E8F4FC;
+  --color-secondary: #F5F8FA;
+  --color-secondary-dark: #E2EEF7;
+  --color-accent: #0077B6;
+  --color-accent-light: #E3F2FD;
+  --color-muted: #5A7080;
+  --color-border: #C5D9E8;
+  --font-sans: 'Segoe UI', system-ui, -apple-system, sans-serif;
 }
 
-* {
-  box-sizing: border-box;
+@layer base {
+  body {
+    @apply bg-secondary text-primary-dark font-sans leading-relaxed m-0;
+  }
 }
 
-body {
-  margin: 0;
-  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-  background: var(--bg);
-  color: var(--text);
-  line-height: 1.5;
-}
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center px-4 py-2.5 rounded-lg bg-primary text-white font-semibold cursor-pointer transition-colors hover:bg-accent disabled:opacity-60 disabled:cursor-not-allowed;
+  }
 
-.page-header h1 {
-  margin: 0 0 0.25rem;
-  font-size: 1.75rem;
-}
+  .btn-secondary {
+    @apply inline-flex items-center justify-center px-4 py-2.5 rounded-lg bg-white text-primary font-semibold border border-border cursor-pointer transition-colors hover:bg-primary-light;
+  }
 
-.page-header p {
-  margin: 0 0 1.5rem;
-  color: var(--muted);
-}
+  .btn-link {
+    @apply inline-flex items-center justify-center px-2 py-1 rounded-lg bg-transparent text-accent font-semibold cursor-pointer hover:text-primary-dark;
+  }
 
-.form-card,
-.card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 1.25rem;
-}
+  .input {
+    @apply w-full px-3 py-2.5 border border-border rounded-lg bg-white focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20;
+  }
 
-.form-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 1rem;
-  margin-bottom: 1rem;
-}
+  select.input {
+    appearance: auto;
+    cursor: pointer;
+    line-height: normal;
+  }
 
-label {
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-  font-size: 0.9rem;
-  font-weight: 600;
-}
+  select.input:focus {
+    box-shadow: none;
+    outline: 2px solid color-mix(in srgb, var(--color-accent) 35%, transparent);
+    outline-offset: 1px;
+  }
 
-input, select {
-  padding: 0.65rem 0.75rem;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  font: inherit;
-  background: white;
-}
+  .label {
+    @apply flex flex-col gap-1.5 text-sm font-semibold text-primary-dark;
+  }
 
-.btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.65rem 1.1rem;
-  border: none;
-  border-radius: 8px;
-  background: var(--primary);
-  color: white;
-  font: inherit;
-  font-weight: 600;
-  cursor: pointer;
-}
+  .card {
+    @apply bg-white border border-border rounded-xl p-5 shadow-sm;
+  }
 
-.btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
+  .filter-panel {
+    @apply bg-white border border-border rounded-xl p-5 shadow-sm overflow-visible relative z-0;
+  }
 
-.btn.secondary {
-  background: white;
-  color: var(--primary);
-  border: 1px solid var(--border);
-}
+  .select-trigger {
+    @apply w-full px-3 py-2.5 border border-border rounded-lg bg-white text-left flex items-center justify-between gap-2 cursor-pointer text-primary-dark;
+    @apply focus:outline-none focus:border-accent disabled:opacity-60 disabled:cursor-not-allowed;
+  }
 
-.btn.link {
-  background: transparent;
-  color: var(--primary);
-  padding: 0.25rem 0.5rem;
-}
+  .select-menu {
+    @apply absolute z-50 mt-1 w-full max-h-60 overflow-y-auto bg-white border border-border rounded-lg shadow-lg py-1 list-none m-0 p-0;
+  }
 
-.alert {
-  background: #fef2f2;
-  color: #991b1b;
-  border: 1px solid #fecaca;
-  padding: 0.75rem 1rem;
-  border-radius: 8px;
-  margin-bottom: 1rem;
-}
+  .select-option {
+    @apply block w-full px-3 py-2.5 text-left text-sm text-primary-dark hover:bg-primary-light cursor-pointer border-0 bg-transparent;
+  }
 
-.alert.success {
-  background: #f0fdf4;
-  color: var(--success);
-  border-color: #bbf7d0;
-}
+  .select-option.selected {
+    @apply bg-primary-light text-accent font-semibold;
+  }
 
-.muted {
-  color: var(--muted);
+  .alert-error {
+    @apply bg-red-50 text-red-800 border border-red-200 px-4 py-3 rounded-lg mb-4;
+  }
+
+  .alert-success {
+    @apply bg-primary-light text-primary-dark border border-[#B3D9F2] px-4 py-3 rounded-lg mb-4;
+  }
+
+  .nav-link {
+    @apply no-underline text-primary-dark px-3.5 py-2 rounded-lg text-sm transition-colors hover:bg-primary-light hover:text-accent;
+  }
+
+  .nav-link-active {
+    @apply bg-primary-light text-accent font-semibold;
+  }
+
+  .module-card {
+    @apply block bg-white border border-border rounded-xl p-5 shadow-sm no-underline h-full transition-all hover:shadow-md hover:border-accent hover:-translate-y-0.5;
+  }
 }

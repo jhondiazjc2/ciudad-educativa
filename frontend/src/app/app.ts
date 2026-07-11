@@ -5,8 +5,7 @@ import { AuthService } from './services/auth.service';
 @Component({
   selector: 'app-root',
   imports: [RouterOutlet, RouterLink, RouterLinkActive],
-  templateUrl: './app.html',
-  styleUrl: './app.css'
+  templateUrl: './app.html'
 })
 export class App {
   constructor(protected auth: AuthService) {}
