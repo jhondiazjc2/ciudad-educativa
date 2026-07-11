@@ -4,8 +4,9 @@ import { Reportes } from './pages/reportes/reportes';
 import { Matricular } from './pages/matricular/matricular';
 import { Consultar } from './pages/consultar/consultar';
 import { Docentes } from './pages/docentes/docentes';
+import { Colegios } from './pages/colegios/colegios';
 import { Login } from './pages/login/login';
-import { authGuard, guestGuard } from './guards/auth.guard';
+import { authGuard, adminGuard, guestGuard } from './guards/auth.guard';
 
 export const routes: Routes = [
   { path: 'login', component: Login, canActivate: [guestGuard] },
@@ -14,5 +15,6 @@ export const routes: Routes = [
   { path: 'matricular', component: Matricular, canActivate: [authGuard] },
   { path: 'consultar', component: Consultar, canActivate: [authGuard] },
   { path: 'docentes', component: Docentes, canActivate: [authGuard] },
+  { path: 'colegios', component: Colegios, canActivate: [authGuard, adminGuard] },
   { path: '**', redirectTo: '' }
 ];

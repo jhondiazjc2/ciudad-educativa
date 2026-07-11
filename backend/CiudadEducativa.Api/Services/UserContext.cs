@@ -8,25 +8,23 @@ public class UserContext(IHttpContextAccessor httpContextAccessor)
 
     public bool IsAdmin => User?.IsInRole("Admin") ?? false;
 
-    public int? ColegioId =>
-        int.TryParse(User?.FindFirstValue("colegio_id"), out var id) ? id : null;
+    public string? CodigoDane => User?.FindFirstValue("codigo_dane");
 
     public string? ColegioNombre => User?.FindFirstValue("colegio_nombre");
 
-    public int? GetColegioFilter() => IsAdmin ? null : ColegioId;
-    // null = Admin sin filtro (toda la ciudad); int = Colegio acotado a su colegio_id del JWT.
+    public string? GetColegioFilter() => IsAdmin ? null : CodigoDane;
 
-    public void EnsureColegioAccess(int colegioId)
+    public void EnsureColegioAccess(string codigoDane)
     {
         if (IsAdmin) return;
-        if (ColegioId != colegioId)
+        if (CodigoDane != codigoDane)
             throw new UnauthorizedAccessException("No tiene permiso para operar sobre este colegio.");
     }
 
-    public int RequireColegioId()
+    public string RequireCodigoDane()
     {
-        if (ColegioId is null)
+        if (string.IsNullOrWhiteSpace(CodigoDane))
             throw new UnauthorizedAccessException("Usuario de colegio sin colegio asignado.");
-        return ColegioId.Value;
+        return CodigoDane;
     }
 }

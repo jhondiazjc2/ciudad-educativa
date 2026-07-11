@@ -9,7 +9,7 @@ GO
     SELECT
         Id,
         ROW_NUMBER() OVER (
-            PARTITION BY EstudianteId, ColegioId, GradoId, AnioAcademicoId
+            PARTITION BY EstudianteId, CodigoDane, GradoId, AnioAcademicoId
             ORDER BY Activa DESC, FechaMatricula DESC, Id DESC
         ) AS Fila
     FROM Matriculas

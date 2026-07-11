@@ -17,7 +17,7 @@ public class MatriculasController(MatriculaService service, UserContext user) : 
     {
         try
         {
-            user.EnsureColegioAccess(request.ColegioId);
+            user.EnsureColegioAccess(request.CodigoDane);
             var result = await service.CrearMatriculaAsync(request);
             return StatusCode(StatusCodes.Status201Created, result);
         }
@@ -33,14 +33,14 @@ public class MatriculasController(MatriculaService service, UserContext user) : 
 
     [HttpGet]
     public async Task<ActionResult<List<MatriculaResponse>>> Consultar(
-        [FromQuery] int colegioId,
+        [FromQuery] string codigoDane,
         [FromQuery] int gradoId,
         [FromQuery] int anioAcademicoId)
     {
         try
         {
-            user.EnsureColegioAccess(colegioId);
-            var result = await service.ConsultarMatriculasAsync(colegioId, gradoId, anioAcademicoId);
+            user.EnsureColegioAccess(codigoDane);
+            var result = await service.ConsultarMatriculasAsync(codigoDane, gradoId, anioAcademicoId);
             return Ok(result);
         }
         catch (UnauthorizedAccessException)
@@ -58,11 +58,10 @@ public class EstudiantesController(MatriculaService service, UserContext user) :
     [HttpGet("{id}/historico")]
     public async Task<ActionResult<List<HistoricoEstudianteResponse>>> Historico(int id)
     {
-        // Admin ve todo. Colegio solo si el estudiante tuvo alguna matricula en su colegio (activa o historica).
         if (!user.IsAdmin)
         {
-            var colegioId = user.RequireColegioId();
-            if (!await service.EstudiantePerteneceAColegioAsync(id, colegioId))
+            var codigoDane = user.RequireCodigoDane();
+            if (!await service.EstudiantePerteneceAColegioAsync(id, codigoDane))
                 return Forbid();
         }
 
@@ -83,7 +82,6 @@ public class ConsultasController(MatriculaService matriculaService, DocenteServi
     [Authorize(Roles = "Admin")]
     [HttpGet("docentes-por-sector")]
     public async Task<ActionResult<DocentesPorSectorResponse>> DocentesPorSector()
-        // Consulta de toda la ciudad; restringida a rol Admin.
         => Ok(await docenteService.ObtenerDocentesPorSectorAsync());
 
     [HttpGet("colegio-mayor-matricula")]
@@ -112,13 +110,17 @@ public class DocenteColegiosController(DocenteService service, UserContext user)
     {
         try
         {
-            user.EnsureColegioAccess(request.ColegioId);
+            user.EnsureColegioAccess(request.CodigoDane);
             var result = await service.AsignarDocenteAsync(request);
-            return CreatedAtAction(nameof(Listar), result);
+            return StatusCode(StatusCodes.Status201Created, result);
         }
         catch (UnauthorizedAccessException)
         {
             return Forbid();
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
         }
     }
 
@@ -136,14 +138,14 @@ public class DocenteColegiosController(DocenteService service, UserContext user)
 public class CatalogosController(AppDbContext db, UserContext user) : ControllerBase
 {
     [HttpGet("colegios")]
-    public async Task<ActionResult<List<CatalogoItem>>> Colegios()
+    public async Task<ActionResult<List<CatalogoColegioItem>>> Colegios()
     {
         var query = db.Colegios.AsQueryable();
         if (!user.IsAdmin)
-            query = query.Where(c => c.Id == user.RequireColegioId());
+            query = query.Where(c => c.CodigoDane == user.RequireCodigoDane());
 
         return Ok(await query.OrderBy(c => c.Nombre)
-            .Select(c => new CatalogoItem(c.Id, c.Nombre)).ToListAsync());
+            .Select(c => new CatalogoColegioItem(c.CodigoDane, c.Nombre)).ToListAsync());
     }
 
     [HttpGet("grados")]
@@ -185,11 +187,70 @@ public class CatalogosController(AppDbContext db, UserContext user) : Controller
 
         if (!user.IsAdmin)
         {
-            var colegioId = user.RequireColegioId();
-            query = query.Where(d => d.DocenteColegios.Any(dc => dc.ColegioId == colegioId && dc.Activo));
+            var codigoDane = user.RequireCodigoDane();
+            query = query.Where(d => d.DocenteColegios.Any(dc => dc.CodigoDane == codigoDane && dc.Activo));
         }
 
         return Ok(await query.OrderBy(d => d.Nombre)
             .Select(d => new CatalogoItem(d.Id, d.Nombre)).ToListAsync());
+    }
+}
+
+[Authorize(Roles = "Admin")]
+[ApiController]
+[Route("api/colegios")]
+public class ColegiosController(ColegioService service) : ControllerBase
+{
+    [HttpGet]
+    public async Task<ActionResult<List<ColegioResponse>>> Listar()
+        => Ok(await service.ListarAsync());
+
+    [HttpGet("{codigoDane}")]
+    public async Task<ActionResult<ColegioResponse>> Obtener(string codigoDane)
+    {
+        var result = await service.ObtenerPorCodigoAsync(codigoDane);
+        return result is null ? NotFound() : Ok(result);
+    }
+
+    [HttpPost]
+    public async Task<ActionResult<ColegioResponse>> Crear([FromBody] CrearColegioRequest request)
+    {
+        try
+        {
+            var result = await service.CrearAsync(request);
+            return StatusCode(StatusCodes.Status201Created, result);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    [HttpPut("{codigoDane}")]
+    public async Task<ActionResult<ColegioResponse>> Actualizar(string codigoDane, [FromBody] ActualizarColegioRequest request)
+    {
+        try
+        {
+            var result = await service.ActualizarAsync(codigoDane, request);
+            return Ok(result);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    [HttpDelete("{codigoDane}")]
+    public async Task<IActionResult> Eliminar(string codigoDane)
+    {
+        try
+        {
+            await service.EliminarAsync(codigoDane);
+            return NoContent();
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
     }
 }

@@ -6,7 +6,7 @@ interface Modulo {
   ruta: string;
   titulo: string;
   descripcion: string;
-  icon: 'reportes' | 'matricular' | 'consultar' | 'docentes';
+  icon: 'reportes' | 'matricular' | 'consultar' | 'docentes' | 'colegios';
 }
 
 @Component({
@@ -19,7 +19,7 @@ export class Inicio {
     const admin = this.auth.isAdmin();
     const colegio = this.auth.user()?.colegioNombre;
 
-    return [
+    const modulos: Modulo[] = [
       {
         ruta: '/reportes',
         titulo: 'Reportes',
@@ -49,6 +49,17 @@ export class Inicio {
         icon: 'docentes'
       }
     ];
+
+    if (admin) {
+      modulos.push({
+        ruta: '/colegios',
+        titulo: 'Colegios',
+        descripcion: 'Crear, editar y eliminar colegios de la ciudad educativa.',
+        icon: 'colegios'
+      });
+    }
+
+    return modulos;
   });
 
   constructor(protected auth: AuthService) {}

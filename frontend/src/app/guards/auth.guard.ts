@@ -17,3 +17,10 @@ export const guestGuard: CanActivateFn = () => {
   const router = inject(Router);
   return auth.isLoggedIn() ? router.createUrlTree(['/']) : true;
 };
+
+/** Rutas exclusivas de administrador (ej. CRUD de colegios). */
+export const adminGuard: CanActivateFn = () => {
+  const auth = inject(AuthService);
+  const router = inject(Router);
+  return auth.isAdmin() ? true : router.createUrlTree(['/']);
+};

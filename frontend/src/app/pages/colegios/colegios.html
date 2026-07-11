@@ -1,0 +1,81 @@
+<section>
+  <header class="mb-6">
+    <h1 class="text-3xl font-bold text-primary-dark m-0 mb-1">Colegios</h1>
+    <p class="text-muted m-0">Administrar colegios públicos y privados de la ciudad</p>
+  </header>
+
+  @if (mensaje()) { <div class="alert-success mb-4">{{ mensaje() }}</div> }
+  @if (error()) { <div class="alert-error mb-4">{{ error() }}</div> }
+
+  <form class="filter-panel grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 items-end mb-6" (ngSubmit)="guardar()">
+    <label class="label min-w-0">
+      Código DANE
+      <input
+        class="input"
+        type="text"
+        [(ngModel)]="codigoDane"
+        name="codigoDane"
+        maxlength="12"
+        [readonly]="!!editandoCodigoDane"
+        required
+      />
+    </label>
+    <label class="label min-w-0 lg:col-span-2">
+      Nombre
+      <input class="input" type="text" [(ngModel)]="nombre" name="nombre" required />
+    </label>
+    <label class="label min-w-0">
+      Sector
+      <select class="input" [(ngModel)]="sector" name="sector">
+        <option value="Publico">Público</option>
+        <option value="Privado">Privado</option>
+      </select>
+    </label>
+    <div class="flex flex-wrap gap-2">
+      <button class="btn flex-1 min-w-[8rem]" type="submit" [disabled]="enviando()">
+        {{ enviando() ? 'Guardando...' : (editandoCodigoDane ? 'Actualizar' : 'Crear colegio') }}
+      </button>
+      @if (editandoCodigoDane) {
+        <button class="btn-secondary flex-1 min-w-[8rem]" type="button" (click)="cancelarEdicion()">
+          Cancelar
+        </button>
+      }
+    </div>
+  </form>
+
+  @if (cargando()) {
+    <p class="text-muted">Cargando colegios...</p>
+  } @else {
+    <div class="overflow-x-auto">
+      <table class="w-full border-collapse bg-white border border-border rounded-xl overflow-hidden">
+        <thead>
+          <tr class="bg-secondary text-primary-dark text-xs uppercase tracking-wide">
+            <th class="px-4 py-3 text-left">Código DANE</th>
+            <th class="px-4 py-3 text-left">Nombre</th>
+            <th class="px-4 py-3 text-left">Sector</th>
+            <th class="px-4 py-3 text-left"></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (c of colegios(); track c.codigoDane) {
+            <tr class="border-t border-border" [class.bg-primary-light/30]="editandoCodigoDane === c.codigoDane">
+              <td class="px-4 py-3 font-mono text-sm">{{ c.codigoDane }}</td>
+              <td class="px-4 py-3">{{ c.nombre }}</td>
+              <td class="px-4 py-3">{{ formatearSector(c.sector) }}</td>
+              <td class="px-4 py-3 whitespace-nowrap">
+                <button class="btn-link mr-3" type="button" (click)="editar(c)">Editar</button>
+                <button class="btn-link text-red-700 hover:text-red-900" type="button" (click)="eliminar(c)">
+                  Eliminar
+                </button>
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td class="px-4 py-6 text-muted" colspan="4">No hay colegios registrados.</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</section>

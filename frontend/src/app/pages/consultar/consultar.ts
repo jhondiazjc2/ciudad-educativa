@@ -1,9 +1,9 @@
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { SelectField, toSelectOptions } from '../../components/select-field/select-field';
+import { SelectField, toColegioSelectOptions, toSelectOptions } from '../../components/select-field/select-field';
 import { ApiService } from '../../services/api.service';
 import { AuthService } from '../../services/auth.service';
-import { CatalogoItem, HistoricoEstudiante, MatriculaResponse } from '../../models';
+import { CatalogoColegioItem, CatalogoItem, HistoricoEstudiante, MatriculaResponse } from '../../models';
 
 @Component({
   selector: 'app-consultar',
@@ -11,11 +11,11 @@ import { CatalogoItem, HistoricoEstudiante, MatriculaResponse } from '../../mode
   templateUrl: './consultar.html'
 })
 export class Consultar implements OnInit {
-  colegios: CatalogoItem[] = [];
+  colegios: CatalogoColegioItem[] = [];
   grados: CatalogoItem[] = [];
   anios: CatalogoItem[] = [];
 
-  colegioId = 0;
+  codigoDane = '';
   gradoId = 0;
   anioAcademicoId = 0;
 
@@ -28,7 +28,7 @@ export class Consultar implements OnInit {
   constructor(private api: ApiService, private auth: AuthService) {}
 
   get colegioOptions() {
-    return toSelectOptions(this.colegios);
+    return toColegioSelectOptions(this.colegios);
   }
 
   get gradoOptions() {
@@ -43,8 +43,8 @@ export class Consultar implements OnInit {
     this.api.getColegios().subscribe({
       next: (d) => {
         this.colegios = d;
-        if (this.auth.isColegio() && this.auth.getColegioId()) {
-          this.colegioId = this.auth.getColegioId()!;
+        if (this.auth.isColegio() && this.auth.getCodigoDane()) {
+          this.codigoDane = this.auth.getCodigoDane()!;
           this.colegioBloqueado = true;
         }
       },
@@ -65,12 +65,12 @@ export class Consultar implements OnInit {
     this.historico = [];
     this.estudianteSeleccionado = '';
 
-    if (!this.colegioId || !this.gradoId || !this.anioAcademicoId) {
+    if (!this.codigoDane || !this.gradoId || !this.anioAcademicoId) {
       this.error = 'Selecciona colegio, grado y año.';
       return;
     }
 
-    this.api.consultarMatriculas(this.colegioId, this.gradoId, this.anioAcademicoId).subscribe({
+    this.api.consultarMatriculas(this.codigoDane, this.gradoId, this.anioAcademicoId).subscribe({
       next: (data) => (this.resultados = data),
       error: (err) => {
         this.error = err.status === 403

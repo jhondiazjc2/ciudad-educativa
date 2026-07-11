@@ -4,7 +4,7 @@ public class Matricula
 {
     public int Id { get; set; }
     public int EstudianteId { get; set; }
-    public int ColegioId { get; set; }
+    public string CodigoDane { get; set; } = string.Empty;
     public int GradoId { get; set; }
     public int GrupoId { get; set; }
     public int AnioAcademicoId { get; set; }

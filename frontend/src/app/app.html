@@ -18,6 +18,9 @@
           <a routerLink="/matricular" routerLinkActive="nav-link-active" class="nav-link">Matricular</a>
           <a routerLink="/consultar" routerLinkActive="nav-link-active" class="nav-link">Consultar</a>
           <a routerLink="/docentes" routerLinkActive="nav-link-active" class="nav-link">Docentes</a>
+          @if (auth.isAdmin()) {
+            <a routerLink="/colegios" routerLinkActive="nav-link-active" class="nav-link">Colegios</a>
+          }
         </div>
         <div class="flex items-center gap-3 text-sm text-muted">
           <span>{{ auth.user()?.nombre }} ({{ auth.user()?.rol }}@if (auth.user()?.colegioNombre) { · {{ auth.user()?.colegioNombre }}})</span>

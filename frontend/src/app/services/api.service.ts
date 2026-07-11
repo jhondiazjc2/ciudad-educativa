@@ -1,9 +1,12 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import {
+  ActualizarColegioRequest,
   AsignarDocenteRequest,
+  CatalogoColegioItem,
   CatalogoItem,
   CatalogoDocumentoItem,
+  ColegioItem,
   ColegioMayorMatricula,
   ContratoPorVencer,
   CrearMatriculaRequest,
@@ -11,6 +14,7 @@ import {
   DocentesPorSector,
   EstudiantesPorEdad,
   GrupoItem,
+  GuardarColegioRequest,
   HistoricoEstudiante,
   MatriculaResponse
 } from '../models';
@@ -22,7 +26,7 @@ export class ApiService {
   constructor(private http: HttpClient) {}
 
   getColegios() {
-    return this.http.get<CatalogoItem[]>(`${API}/catalogos/colegios`);
+    return this.http.get<CatalogoColegioItem[]>(`${API}/catalogos/colegios`);
   }
 
   getGrados() {
@@ -51,9 +55,9 @@ export class ApiService {
     return this.http.post<MatriculaResponse>(`${API}/matriculas`, data);
   }
 
-  consultarMatriculas(colegioId: number, gradoId: number, anioAcademicoId: number) {
+  consultarMatriculas(codigoDane: string, gradoId: number, anioAcademicoId: number) {
     const params = new HttpParams()
-      .set('colegioId', colegioId)
+      .set('codigoDane', codigoDane)
       .set('gradoId', gradoId)
       .set('anioAcademicoId', anioAcademicoId);
     return this.http.get<MatriculaResponse[]>(`${API}/matriculas`, { params });
@@ -93,5 +97,21 @@ export class ApiService {
 
   desactivarAsignacion(id: number) {
     return this.http.delete<void>(`${API}/docente-colegios/${id}`);
+  }
+
+  getColegiosAdmin() {
+    return this.http.get<ColegioItem[]>(`${API}/colegios`);
+  }
+
+  crearColegio(data: GuardarColegioRequest) {
+    return this.http.post<ColegioItem>(`${API}/colegios`, data);
+  }
+
+  actualizarColegio(codigoDane: string, data: ActualizarColegioRequest) {
+    return this.http.put<ColegioItem>(`${API}/colegios/${codigoDane}`, data);
+  }
+
+  eliminarColegio(codigoDane: string) {
+    return this.http.delete<void>(`${API}/colegios/${codigoDane}`);
   }
 }

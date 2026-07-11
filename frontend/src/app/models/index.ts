@@ -3,6 +3,11 @@ export interface CatalogoItem {
   nombre: string;
 }
 
+export interface CatalogoColegioItem {
+  codigoDane: string;
+  nombre: string;
+}
+
 export interface CatalogoDocumentoItem {
   codigo: string;
   nombre: string;
@@ -20,7 +25,7 @@ export interface CrearMatriculaRequest {
   tipoDocumento: string;
   numeroDocumento: string;
   fechaNacimiento: string;
-  colegioId: number;
+  codigoDane: string;
   gradoId: number;
   grupoId: number;
   anioAcademicoId: number;
@@ -34,7 +39,7 @@ export interface MatriculaResponse {
   numeroDocumento: string;
   fechaNacimiento: string;
   edad: number;
-  colegioId: number;
+  codigoDane: string;
   colegioNombre: string;
   gradoId: number;
   gradoNombre: string;
@@ -87,7 +92,7 @@ export interface DocenteColegio {
   id: number;
   docenteId: number;
   docenteNombre: string;
-  colegioId: number;
+  codigoDane: string;
   colegioNombre: string;
   sector: string;
   activo: boolean;
@@ -95,5 +100,22 @@ export interface DocenteColegio {
 
 export interface AsignarDocenteRequest {
   docenteId: number;
-  colegioId: number;
+  codigoDane: string;
+}
+
+export interface ColegioItem {
+  codigoDane: string;
+  nombre: string;
+  sector: string;
+}
+
+export interface GuardarColegioRequest {
+  codigoDane: string;
+  nombre: string;
+  sector: string;
+}
+
+export interface ActualizarColegioRequest {
+  nombre: string;
+  sector: string;
 }

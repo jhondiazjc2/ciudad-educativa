@@ -25,7 +25,7 @@ IF OBJECT_ID('Colegios', 'U') IS NOT NULL DROP TABLE Colegios;
 GO
 
 CREATE TABLE Colegios (
-    Id INT IDENTITY(1,1) PRIMARY KEY,
+    CodigoDane NVARCHAR(12) NOT NULL PRIMARY KEY,
     Nombre NVARCHAR(150) NOT NULL,
     Sector NVARCHAR(20) NOT NULL CHECK (Sector IN ('Publico', 'Privado'))
 );
@@ -36,13 +36,13 @@ CREATE TABLE Usuarios (
     PasswordHash NVARCHAR(255) NOT NULL,
     Nombre NVARCHAR(100) NOT NULL,
     Rol NVARCHAR(20) NOT NULL CHECK (Rol IN ('Admin', 'Colegio')),
-    ColegioId INT NULL,
+    CodigoDane NVARCHAR(12) NULL,
     Activo BIT NOT NULL DEFAULT 1,
     FechaCreacion DATETIME2 NOT NULL DEFAULT GETDATE(),
-    CONSTRAINT FK_Usuarios_Colegios FOREIGN KEY (ColegioId) REFERENCES Colegios(Id),
+    CONSTRAINT FK_Usuarios_Colegios FOREIGN KEY (CodigoDane) REFERENCES Colegios(CodigoDane),
     CONSTRAINT CK_Usuarios_RolColegio CHECK (
-        (Rol = 'Admin' AND ColegioId IS NULL) OR
-        (Rol = 'Colegio' AND ColegioId IS NOT NULL)
+        (Rol = 'Admin' AND CodigoDane IS NULL) OR
+        (Rol = 'Colegio' AND CodigoDane IS NOT NULL)
     )
 );
 
@@ -88,14 +88,14 @@ CREATE TABLE Estudiantes (
 CREATE TABLE Matriculas (
     Id INT IDENTITY(1,1) PRIMARY KEY,
     EstudianteId INT NOT NULL,
-    ColegioId INT NOT NULL,
+    CodigoDane NVARCHAR(12) NOT NULL,
     GradoId INT NOT NULL,
     GrupoId INT NOT NULL,
     AnioAcademicoId INT NOT NULL,
     Activa BIT NOT NULL DEFAULT 1,
     FechaMatricula DATE NOT NULL DEFAULT GETDATE(),
     CONSTRAINT FK_Matriculas_Estudiantes FOREIGN KEY (EstudianteId) REFERENCES Estudiantes(Id),
-    CONSTRAINT FK_Matriculas_Colegios FOREIGN KEY (ColegioId) REFERENCES Colegios(Id),
+    CONSTRAINT FK_Matriculas_Colegios FOREIGN KEY (CodigoDane) REFERENCES Colegios(CodigoDane),
     CONSTRAINT FK_Matriculas_Grados FOREIGN KEY (GradoId) REFERENCES Grados(Id),
     CONSTRAINT FK_Matriculas_Grupos FOREIGN KEY (GrupoId) REFERENCES Grupos(Id),
     CONSTRAINT FK_Matriculas_Anios FOREIGN KEY (AnioAcademicoId) REFERENCES AniosAcademicos(Id)
@@ -104,24 +104,24 @@ CREATE TABLE Matriculas (
 CREATE TABLE DocenteColegios (
     Id INT IDENTITY(1,1) PRIMARY KEY,
     DocenteId INT NOT NULL,
-    ColegioId INT NOT NULL,
+    CodigoDane NVARCHAR(12) NOT NULL,
     FechaAsignacion DATE NOT NULL DEFAULT GETDATE(),
     Activo BIT NOT NULL DEFAULT 1,
     CONSTRAINT FK_DocenteColegios_Docentes FOREIGN KEY (DocenteId) REFERENCES Docentes(Id),
-    CONSTRAINT FK_DocenteColegios_Colegios FOREIGN KEY (ColegioId) REFERENCES Colegios(Id),
-    CONSTRAINT UQ_DocenteColegio UNIQUE (DocenteId, ColegioId)
+    CONSTRAINT FK_DocenteColegios_Colegios FOREIGN KEY (CodigoDane) REFERENCES Colegios(CodigoDane),
+    CONSTRAINT UQ_DocenteColegio UNIQUE (DocenteId, CodigoDane)
 );
 
-CREATE INDEX IX_Matriculas_Consulta ON Matriculas(ColegioId, GradoId, AnioAcademicoId);
+CREATE INDEX IX_Matriculas_Consulta ON Matriculas(CodigoDane, GradoId, AnioAcademicoId);
 CREATE INDEX IX_Matriculas_EstudianteActiva ON Matriculas(EstudianteId, Activa);
 
-INSERT INTO Colegios (Nombre, Sector) VALUES
-(N'Colegio San José', 'Privado'),
-(N'Instituto Nacional', 'Publico'),
-(N'Colegio Los Andes', 'Privado'),
-(N'Escuela República de Colombia', 'Publico'),
-(N'Colegio Santa María', 'Privado'),
-(N'Liceo Municipal', 'Publico');
+INSERT INTO Colegios (CodigoDane, Nombre, Sector) VALUES
+(N'105001000001', N'Colegio San José', 'Privado'),
+(N'105001000002', N'Instituto Nacional', 'Publico'),
+(N'105001000003', N'Colegio Los Andes', 'Privado'),
+(N'105001000004', N'Escuela República de Colombia', 'Publico'),
+(N'105001000005', N'Colegio Santa María', 'Privado'),
+(N'105001000006', N'Liceo Municipal', 'Publico');
 
 INSERT INTO Grados (Nombre, Orden) VALUES
 (N'Preescolar', 0),
@@ -148,17 +148,17 @@ INSERT INTO Grupos (GradoId, Nombre, DocenteDirectorId) VALUES
 (4, 'A', 1), (4, 'B', 2),
 (5, 'A', 3), (5, 'B', 4);
 
-INSERT INTO DocenteColegios (DocenteId, ColegioId, FechaAsignacion, Activo) VALUES
-(1, 1, '2020-02-01', 1),
-(1, 3, '2021-01-01', 1),
-(2, 2, '2019-08-15', 1),
-(2, 4, '2020-01-01', 1),
-(3, 1, '2021-01-10', 1),
-(4, 5, '2018-03-20', 1),
-(4, 6, '2019-01-01', 1),
-(5, 3, '2022-07-01', 1),
-(6, 2, '2017-01-05', 1),
-(6, 4, '2018-01-01', 1);
+INSERT INTO DocenteColegios (DocenteId, CodigoDane, FechaAsignacion, Activo) VALUES
+(1, N'105001000001', '2020-02-01', 1),
+(1, N'105001000003', '2021-01-01', 1),
+(2, N'105001000002', '2019-08-15', 1),
+(2, N'105001000004', '2020-01-01', 1),
+(3, N'105001000001', '2021-01-10', 1),
+(4, N'105001000005', '2018-03-20', 1),
+(4, N'105001000006', '2019-01-01', 1),
+(5, N'105001000003', '2022-07-01', 1),
+(6, N'105001000002', '2017-01-05', 1),
+(6, N'105001000004', '2018-01-01', 1);
 
 INSERT INTO Estudiantes (Nombre, TipoDocumento, NumeroDocumento, FechaNacimiento) VALUES
 (N'Sofia Ramirez', 'RC', '1098765432', '2019-03-15'),
@@ -172,26 +172,26 @@ INSERT INTO Estudiantes (Nombre, TipoDocumento, NumeroDocumento, FechaNacimiento
 (N'Lucia Herrera', 'RC', '1098765435', '2018-02-14'),
 (N'Nicolas Silva', 'TI', '1002345682', '2016-08-09');
 
-INSERT INTO Matriculas (EstudianteId, ColegioId, GradoId, GrupoId, AnioAcademicoId, Activa, FechaMatricula) VALUES
-(1, 1, 1, 1, 3, 1, '2026-01-15'),
-(2, 1, 2, 3, 3, 1, '2026-01-15'),
-(3, 2, 4, 7, 3, 1, '2026-01-20'),
-(4, 2, 5, 9, 3, 1, '2026-01-20'),
-(5, 3, 1, 2, 3, 1, '2026-01-18'),
-(6, 4, 3, 5, 3, 1, '2026-01-22'),
-(7, 5, 4, 8, 3, 1, '2026-01-10'),
-(8, 6, 5, 10, 3, 1, '2026-01-12'),
-(9, 1, 2, 4, 2, 0, '2025-01-15'),
-(9, 1, 3, 5, 3, 1, '2026-01-15'),
-(10, 2, 3, 6, 2, 0, '2025-01-20'),
-(10, 2, 4, 7, 3, 1, '2026-01-20');
+INSERT INTO Matriculas (EstudianteId, CodigoDane, GradoId, GrupoId, AnioAcademicoId, Activa, FechaMatricula) VALUES
+(1, N'105001000001', 1, 1, 3, 1, '2026-01-15'),
+(2, N'105001000001', 2, 3, 3, 1, '2026-01-15'),
+(3, N'105001000002', 4, 7, 3, 1, '2026-01-20'),
+(4, N'105001000002', 5, 9, 3, 1, '2026-01-20'),
+(5, N'105001000003', 1, 2, 3, 1, '2026-01-18'),
+(6, N'105001000004', 3, 5, 3, 1, '2026-01-22'),
+(7, N'105001000005', 4, 8, 3, 1, '2026-01-10'),
+(8, N'105001000006', 5, 10, 3, 1, '2026-01-12'),
+(9, N'105001000001', 2, 4, 2, 0, '2025-01-15'),
+(9, N'105001000001', 3, 5, 3, 1, '2026-01-15'),
+(10, N'105001000002', 3, 6, 2, 0, '2025-01-20'),
+(10, N'105001000002', 4, 7, 3, 1, '2026-01-20');
 
 -- Usuarios: contraseñas hasheadas con BCrypt (factor 11)
 -- admin@ciudad.edu  -> Admin123!
 -- colegio@ciudad.edu -> Colegio123!
-INSERT INTO Usuarios (Email, PasswordHash, Nombre, Rol, ColegioId, Activo) VALUES
+INSERT INTO Usuarios (Email, PasswordHash, Nombre, Rol, CodigoDane, Activo) VALUES
 (N'admin@ciudad.edu', N'$2b$11$nNZkAZIKhHTodb5Ak3u28ewtMv8m7xuyXzSt/6nWrJeq2FGiMVj3O', N'Administrador Ciudad', N'Admin', NULL, 1),
-(N'colegio@ciudad.edu', N'$2b$11$hA1laYOjMi5UDcNuTV6HtuFIwD.i3BkwqCOWFDNU0Q4X.95khouIm', N'Administrador Colegio', N'Colegio', 1, 1);
+(N'colegio@ciudad.edu', N'$2b$11$hA1laYOjMi5UDcNuTV6HtuFIwD.i3BkwqCOWFDNU0Q4X.95khouIm', N'Administrador Colegio', N'Colegio', N'105001000001', 1);
 
 GO
 

@@ -5,7 +5,7 @@ public record CrearMatriculaRequest(
     string TipoDocumento,
     string NumeroDocumento,
     DateTime FechaNacimiento,
-    int ColegioId,
+    string CodigoDane,
     int GradoId,
     int GrupoId,
     int AnioAcademicoId
@@ -19,7 +19,7 @@ public record MatriculaResponse(
     string NumeroDocumento,
     DateTime FechaNacimiento,
     int Edad,
-    int ColegioId,
+    string CodigoDane,
     string ColegioNombre,
     int GradoId,
     string GradoNombre,
@@ -68,18 +68,25 @@ public record ColegioMayorMatriculaResponse(
     int TotalEstudiantes
 );
 
-public record AsignarDocenteRequest(int DocenteId, int ColegioId);
+public record AsignarDocenteRequest(int DocenteId, string CodigoDane);
 
 public record DocenteColegioResponse(
     int Id,
     int DocenteId,
     string DocenteNombre,
-    int ColegioId,
+    string CodigoDane,
     string ColegioNombre,
     string Sector,
     bool Activo
 );
 
 public record CatalogoItem(int Id, string Nombre);
+public record CatalogoColegioItem(string CodigoDane, string Nombre);
 public record CatalogoDocumentoItem(string Codigo, string Nombre);
 public record GrupoItem(int Id, string Nombre, int GradoId, string? DocenteDirector);
+
+public record ColegioResponse(string CodigoDane, string Nombre, string Sector);
+
+public record CrearColegioRequest(string CodigoDane, string Nombre, string Sector);
+
+public record ActualizarColegioRequest(string Nombre, string Sector);

@@ -12,17 +12,15 @@ public class AuthService(AppDbContext db, IConfiguration config)
 {
     public async Task<LoginResponse?> LoginAsync(LoginRequest request)
     {
-        // Email normalizado: login case-insensitive; los emails en BD deben guardarse en minusculas.
         var email = request.Email.Trim().ToLowerInvariant();
         var usuario = await db.Usuarios
             .Include(u => u.Colegio)
             .FirstOrDefaultAsync(u => u.Email == email && u.Activo);
 
         if (usuario is null || !BCrypt.Net.BCrypt.Verify(request.Password, usuario.PasswordHash))
-            return null; // Mismo resultado que usuario inexistente: evita enumeracion de cuentas.
+            return null;
 
-        // Rol Colegio exige ColegioId; sin el, el login falla aunque la contraseña sea correcta.
-        if (usuario.Rol == "Colegio" && usuario.ColegioId is null)
+        if (usuario.Rol == "Colegio" && string.IsNullOrWhiteSpace(usuario.CodigoDane))
             return null;
 
         var expiraEn = DateTime.UtcNow.AddHours(1);
@@ -33,7 +31,7 @@ public class AuthService(AppDbContext db, IConfiguration config)
             usuario.Nombre,
             usuario.Email,
             usuario.Rol,
-            usuario.ColegioId,
+            usuario.CodigoDane,
             usuario.Colegio?.Nombre,
             expiraEn
         );
@@ -52,10 +50,9 @@ public class AuthService(AppDbContext db, IConfiguration config)
             new(ClaimTypes.Role, usuario.Rol)
         };
 
-        if (usuario.ColegioId.HasValue)
+        if (!string.IsNullOrWhiteSpace(usuario.CodigoDane))
         {
-            // Claims custom consumidos por UserContext; los nombres deben coincidir con colegio_id / colegio_nombre.
-            claims.Add(new Claim("colegio_id", usuario.ColegioId.Value.ToString()));
+            claims.Add(new Claim("codigo_dane", usuario.CodigoDane));
             if (!string.IsNullOrEmpty(usuario.Colegio?.Nombre))
                 claims.Add(new Claim("colegio_nombre", usuario.Colegio.Nombre));
         }

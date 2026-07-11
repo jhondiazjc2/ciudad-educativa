@@ -4,8 +4,8 @@
     <p class="text-muted m-0">Un docente puede trabajar en varios colegios simultáneamente</p>
   </header>
 
-  @if (mensaje) { <div class="alert-success">{{ mensaje }}</div> }
-  @if (error) { <div class="alert-error">{{ error }}</div> }
+  @if (mensaje()) { <div class="alert-success">{{ mensaje() }}</div> }
+  @if (error()) { <div class="alert-error">{{ error() }}</div> }
 
   <div class="filter-panel grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 items-start mb-6">
     <label class="label min-w-0">
@@ -19,13 +19,15 @@
     <label class="label min-w-0">
       Colegio
       <app-select-field
-        [(ngModel)]="colegioId"
-        name="colegioId"
+        [(ngModel)]="codigoDane"
+        name="codigoDane"
         [options]="colegioOptions"
         [disabled]="colegioBloqueado"
       />
     </label>
-    <button class="btn self-end" (click)="asignar()">Asignar docente</button>
+    <button class="btn self-end" (click)="asignar()" [disabled]="enviando()">
+      {{ enviando() ? 'Asignando...' : 'Asignar docente' }}
+    </button>
   </div>
 
   <div class="overflow-x-auto">
@@ -40,7 +42,7 @@
         </tr>
       </thead>
       <tbody>
-        @for (a of asignaciones; track a.id) {
+        @for (a of asignaciones(); track a.id) {
           <tr class="border-t border-border">
             <td class="px-4 py-3">{{ a.docenteNombre }}</td>
             <td class="px-4 py-3">{{ a.colegioNombre }}</td>

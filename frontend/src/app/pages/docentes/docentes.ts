@@ -1,12 +1,12 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { HttpErrorResponse } from '@angular/common/http';
+import { finalize } from 'rxjs';
 import { ApiService } from '../../services/api.service';
 import { AuthService } from '../../services/auth.service';
-import { CatalogoItem, DocenteColegio } from '../../models';
-
+import { CatalogoColegioItem, CatalogoItem, DocenteColegio } from '../../models';
 import { formatearSector } from '../../utils/texto';
-
-import { SelectField, toSelectOptions } from '../../components/select-field/select-field';
+import { SelectField, toColegioSelectOptions, toSelectOptions } from '../../components/select-field/select-field';
 
 @Component({
   selector: 'app-docentes',
@@ -16,13 +16,14 @@ import { SelectField, toSelectOptions } from '../../components/select-field/sele
 export class Docentes implements OnInit {
   protected readonly formatearSector = formatearSector;
   docentes: CatalogoItem[] = [];
-  colegios: CatalogoItem[] = [];
-  asignaciones: DocenteColegio[] = [];
+  colegios: CatalogoColegioItem[] = [];
+  readonly asignaciones = signal<DocenteColegio[]>([]);
 
   docenteId = 0;
-  colegioId = 0;
-  mensaje = '';
-  error = '';
+  codigoDane = '';
+  readonly mensaje = signal('');
+  readonly error = signal('');
+  readonly enviando = signal(false);
   colegioBloqueado = false;
 
   constructor(private api: ApiService, private auth: AuthService) {}
@@ -32,53 +33,74 @@ export class Docentes implements OnInit {
   }
 
   get colegioOptions() {
-    return toSelectOptions(this.colegios);
+    return toColegioSelectOptions(this.colegios);
   }
 
   ngOnInit(): void {
     this.api.getDocentes().subscribe((d) => (this.docentes = d));
     this.api.getColegios().subscribe((d) => {
       this.colegios = d;
-      if (this.auth.isColegio() && this.auth.getColegioId()) {
-        this.colegioId = this.auth.getColegioId()!;
-        this.colegioBloqueado = true; // Mismo patron que matricular: UI + validacion 403 en API.
+      if (this.auth.isColegio() && this.auth.getCodigoDane()) {
+        this.codigoDane = this.auth.getCodigoDane()!;
+        this.colegioBloqueado = true;
       }
     });
     this.cargarAsignaciones();
   }
 
   cargarAsignaciones(): void {
-    this.api.getAsignaciones().subscribe((d) => (this.asignaciones = d));
+    this.api.getAsignaciones().subscribe((d) => this.asignaciones.set(d));
   }
 
   asignar(): void {
-    this.mensaje = '';
-    this.error = '';
+    this.mensaje.set('');
+    this.error.set('');
 
-    if (!this.docenteId || !this.colegioId) {
-      this.error = 'Selecciona docente y colegio.';
+    if (!this.docenteId || !this.codigoDane) {
+      this.error.set('Selecciona docente y colegio.');
       return;
     }
 
-    this.api.asignarDocente({ docenteId: this.docenteId, colegioId: this.colegioId }).subscribe({
+    this.enviando.set(true);
+    this.api.asignarDocente({ docenteId: this.docenteId, codigoDane: this.codigoDane }).pipe(
+      finalize(() => this.enviando.set(false))
+    ).subscribe({
       next: () => {
-        this.mensaje = 'Docente asignado correctamente.';
+        this.mensaje.set('Docente asignado correctamente.');
         this.docenteId = 0;
-        if (!this.colegioBloqueado) this.colegioId = 0;
+        if (!this.colegioBloqueado) this.codigoDane = '';
         this.cargarAsignaciones();
       },
-      error: (err) => {
-        this.error = err.status === 403
-          ? 'No tiene permiso para asignar docentes a este colegio.'
-          : 'Error al asignar docente.';
+      error: (err: HttpErrorResponse) => {
+        this.error.set(
+          err.status === 403
+            ? 'No tiene permiso para asignar docentes a este colegio.'
+            : (this.extraerMensajeApi(err) ?? 'Error al asignar docente.')
+        );
       }
     });
   }
 
   quitar(id: number): void {
+    this.mensaje.set('');
+    this.error.set('');
     this.api.desactivarAsignacion(id).subscribe({
-      next: () => this.cargarAsignaciones(),
-      error: () => (this.error = 'No tiene permiso para quitar esta asignación.')
+      next: () => {
+        this.mensaje.set('Asignación desactivada correctamente.');
+        this.cargarAsignaciones();
+      },
+      error: () => this.error.set('No tiene permiso para quitar esta asignación.')
     });
+  }
+
+  private extraerMensajeApi(err: HttpErrorResponse): string | null {
+    const body = err.error;
+    if (body && typeof body === 'object' && 'message' in body && body.message) {
+      return String(body.message);
+    }
+    if (typeof body === 'string' && body.trim()) {
+      return body;
+    }
+    return null;
   }
 }

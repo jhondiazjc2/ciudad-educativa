@@ -7,7 +7,7 @@ public record LoginResponse(
     string Nombre,
     string Email,
     string Rol,
-    int? ColegioId,
+    string? CodigoDane,
     string? ColegioNombre,
     DateTime ExpiraEn
 );

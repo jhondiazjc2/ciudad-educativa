@@ -42,6 +42,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 builder.Services.AddScoped<MatriculaService>();
 builder.Services.AddScoped<DocenteService>();
+builder.Services.AddScoped<ColegioService>();
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<UserContext>();

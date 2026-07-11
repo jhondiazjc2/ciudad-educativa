@@ -8,7 +8,7 @@ export interface LoginResponse {
   nombre: string;
   email: string;
   rol: string;
-  colegioId: number | null;
+  codigoDane: string | null;
   colegioNombre: string | null;
   expiraEn: string;
 }
@@ -17,7 +17,7 @@ export interface AuthUser {
   nombre: string;
   email: string;
   rol: string;
-  colegioId: number | null;
+  codigoDane: string | null;
   colegioNombre: string | null;
   expiraEn: string;
 }
@@ -40,7 +40,7 @@ export class AuthService {
           nombre: res.nombre,
           email: res.email,
           rol: res.rol,
-          colegioId: res.colegioId,
+          codigoDane: res.codigoDane,
           colegioNombre: res.colegioNombre,
           expiraEn: res.expiraEn
         };
@@ -76,8 +76,8 @@ export class AuthService {
     return this.user()?.rol === 'Colegio';
   }
 
-  getColegioId(): number | null {
-    return this.user()?.colegioId ?? null;
+  getCodigoDane(): string | null {
+    return this.user()?.codigoDane ?? null;
   }
 
   private loadUser(): AuthUser | null {

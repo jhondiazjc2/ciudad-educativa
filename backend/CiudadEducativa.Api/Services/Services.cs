@@ -54,7 +54,7 @@ public class MatriculaService(AppDbContext db)
         }
 
         var matriculaActivaOtroColegio = await db.Matriculas
-            .AnyAsync(m => m.EstudianteId == estudiante.Id && m.Activa && m.ColegioId != request.ColegioId);
+            .AnyAsync(m => m.EstudianteId == estudiante.Id && m.Activa && m.CodigoDane != request.CodigoDane);
 
         if (matriculaActivaOtroColegio)
             throw new InvalidOperationException("El estudiante ya tiene una matrícula activa en otro colegio.");
@@ -62,7 +62,7 @@ public class MatriculaService(AppDbContext db)
         var matriculaMismoPeriodo = await db.Matriculas
             .FirstOrDefaultAsync(m =>
                 m.EstudianteId == estudiante.Id &&
-                m.ColegioId == request.ColegioId &&
+                m.CodigoDane == request.CodigoDane &&
                 m.GradoId == request.GradoId &&
                 m.AnioAcademicoId == request.AnioAcademicoId);
 
@@ -96,7 +96,7 @@ public class MatriculaService(AppDbContext db)
         var matricula = new Matricula
         {
             EstudianteId = estudiante.Id,
-            ColegioId = request.ColegioId,
+            CodigoDane = request.CodigoDane,
             GradoId = request.GradoId,
             GrupoId = request.GrupoId,
             AnioAcademicoId = request.AnioAcademicoId,
@@ -110,7 +110,7 @@ public class MatriculaService(AppDbContext db)
         return (await ObtenerMatriculaPorIdAsync(matricula.Id))!;
     }
 
-    public async Task<List<MatriculaResponse>> ConsultarMatriculasAsync(int colegioId, int gradoId, int anioAcademicoId)
+    public async Task<List<MatriculaResponse>> ConsultarMatriculasAsync(string codigoDane, int gradoId, int anioAcademicoId)
     {
         return await db.Matriculas
             .Include(m => m.Estudiante)
@@ -118,7 +118,7 @@ public class MatriculaService(AppDbContext db)
             .Include(m => m.Grado)
             .Include(m => m.Grupo).ThenInclude(g => g.DocenteDirector)
             .Include(m => m.AnioAcademico)
-            .Where(m => m.ColegioId == colegioId && m.GradoId == gradoId && m.AnioAcademicoId == anioAcademicoId && m.Activa)
+            .Where(m => m.CodigoDane == codigoDane && m.GradoId == gradoId && m.AnioAcademicoId == anioAcademicoId && m.Activa)
             .OrderBy(m => m.Estudiante.Nombre)
             .Select(m => MapToResponse(m))
             .ToListAsync();
@@ -144,11 +144,11 @@ public class MatriculaService(AppDbContext db)
             .ToListAsync();
     }
 
-    public async Task<EstudiantesPorEdadResponse> ObtenerEstudiantesPorEdadAsync(int? colegioId = null)
+    public async Task<EstudiantesPorEdadResponse> ObtenerEstudiantesPorEdadAsync(string? codigoDane = null)
     {
         var query = db.Matriculas.Where(m => m.Activa);
-        if (colegioId.HasValue)
-            query = query.Where(m => m.ColegioId == colegioId.Value);
+        if (!string.IsNullOrWhiteSpace(codigoDane))
+            query = query.Where(m => m.CodigoDane == codigoDane);
 
         // Solo matriculas activas. Distinct por fecha de nacimiento: cada fecha unica cuenta una vez en los rangos.
         var fechasNacimiento = await query
@@ -165,18 +165,17 @@ public class MatriculaService(AppDbContext db)
         );
     }
 
-    public async Task<bool> EstudiantePerteneceAColegioAsync(int estudianteId, int colegioId)
-        // Cualquier matricula (activa o historica) vincula al estudiante con el colegio.
-        => await db.Matriculas.AnyAsync(m => m.EstudianteId == estudianteId && m.ColegioId == colegioId);
+    public async Task<bool> EstudiantePerteneceAColegioAsync(int estudianteId, string codigoDane)
+        => await db.Matriculas.AnyAsync(m => m.EstudianteId == estudianteId && m.CodigoDane == codigoDane);
 
-    public async Task<ColegioMayorMatriculaResponse?> ObtenerColegioMayorMatriculaAsync(int? colegioId = null)
+    public async Task<ColegioMayorMatriculaResponse?> ObtenerColegioMayorMatriculaAsync(string? codigoDane = null)
     {
         var query = db.Matriculas.Where(m => m.Activa);
-        if (colegioId.HasValue)
-            query = query.Where(m => m.ColegioId == colegioId.Value);
+        if (!string.IsNullOrWhiteSpace(codigoDane))
+            query = query.Where(m => m.CodigoDane == codigoDane);
 
         var resultado = await query
-            .GroupBy(m => new { m.ColegioId, m.Colegio.Nombre, m.Colegio.Sector })
+            .GroupBy(m => new { m.CodigoDane, m.Colegio.Nombre, m.Colegio.Sector })
             .Select(g => new { g.Key.Nombre, g.Key.Sector, Total = g.Count() })
             .OrderByDescending(x => x.Total)
             .FirstOrDefaultAsync();
@@ -207,7 +206,7 @@ public class MatriculaService(AppDbContext db)
         m.Estudiante.NumeroDocumento,
         m.Estudiante.FechaNacimiento,
         CalcularEdad(m.Estudiante.FechaNacimiento),
-        m.ColegioId,
+        m.CodigoDane,
         m.Colegio.Nombre,
         m.GradoId,
         m.Grado.Nombre,
@@ -247,7 +246,7 @@ public class DocenteService(AppDbContext db)
         return new DocentesPorSectorResponse(docentesPublico, docentesPrivado, total);
     }
 
-    public async Task<List<ContratoPorVencerResponse>> ObtenerContratosPorVencerAsync(int dias = 30, int? colegioId = null)
+    public async Task<List<ContratoPorVencerResponse>> ObtenerContratosPorVencerAsync(int dias = 30, string? codigoDane = null)
     {
         var hoy = DateTime.Today;
         var limite = hoy.AddDays(dias);
@@ -255,10 +254,8 @@ public class DocenteService(AppDbContext db)
         var query = db.Docentes
             .Where(d => d.Activo && d.VigenciaContrato != null && d.VigenciaContrato >= hoy && d.VigenciaContrato <= limite);
 
-        if (colegioId.HasValue)
-        {
-            query = query.Where(d => d.DocenteColegios.Any(dc => dc.ColegioId == colegioId.Value && dc.Activo));
-        }
+        if (!string.IsNullOrWhiteSpace(codigoDane))
+            query = query.Where(d => d.DocenteColegios.Any(dc => dc.CodigoDane == codigoDane && dc.Activo));
 
         var docentes = await query
             .OrderBy(d => d.VigenciaContrato)
@@ -276,12 +273,15 @@ public class DocenteService(AppDbContext db)
 
     public async Task<DocenteColegioResponse> AsignarDocenteAsync(AsignarDocenteRequest request)
     {
-        // Indice unico (DocenteId, ColegioId): si ya existe la pareja, se reactiva en lugar de insertar duplicado.
+        // Indice unico (DocenteId, CodigoDane): si ya existe activa, se rechaza; si existe inactiva, se reactiva.
         var existe = await db.DocenteColegios
-            .FirstOrDefaultAsync(dc => dc.DocenteId == request.DocenteId && dc.ColegioId == request.ColegioId);
+            .FirstOrDefaultAsync(dc => dc.DocenteId == request.DocenteId && dc.CodigoDane == request.CodigoDane);
 
         if (existe is not null)
         {
+            if (existe.Activo)
+                throw new InvalidOperationException("El docente ya está asignado a este colegio.");
+
             existe.Activo = true;
             existe.FechaAsignacion = DateTime.Today;
         }
@@ -290,7 +290,7 @@ public class DocenteService(AppDbContext db)
             existe = new DocenteColegio
             {
                 DocenteId = request.DocenteId,
-                ColegioId = request.ColegioId,
+                CodigoDane = request.CodigoDane,
                 FechaAsignacion = DateTime.Today,
                 Activo = true
             };
@@ -301,18 +301,18 @@ public class DocenteService(AppDbContext db)
         return (await ObtenerAsignacionPorIdAsync(existe.Id))!;
     }
 
-    public async Task<bool> DesactivarAsignacionAsync(int id, int? colegioId = null)
+    public async Task<bool> DesactivarAsignacionAsync(int id, string? codigoDane = null)
     {
         var asignacion = await db.DocenteColegios.FindAsync(id);
         if (asignacion is null) return false;
-        if (colegioId.HasValue && asignacion.ColegioId != colegioId.Value) return false;
+        if (!string.IsNullOrWhiteSpace(codigoDane) && asignacion.CodigoDane != codigoDane) return false;
 
         asignacion.Activo = false;
         await db.SaveChangesAsync();
         return true;
     }
 
-    public async Task<List<DocenteColegioResponse>> ListarAsignacionesAsync(int? docenteId = null, int? colegioId = null)
+    public async Task<List<DocenteColegioResponse>> ListarAsignacionesAsync(int? docenteId = null, string? codigoDane = null)
     {
         var query = db.DocenteColegios
             .Include(dc => dc.Docente)
@@ -322,8 +322,8 @@ public class DocenteService(AppDbContext db)
         if (docenteId.HasValue)
             query = query.Where(dc => dc.DocenteId == docenteId.Value);
 
-        if (colegioId.HasValue)
-            query = query.Where(dc => dc.ColegioId == colegioId.Value);
+        if (!string.IsNullOrWhiteSpace(codigoDane))
+            query = query.Where(dc => dc.CodigoDane == codigoDane);
 
         return await query
             .OrderBy(dc => dc.Docente.Nombre)
@@ -332,7 +332,7 @@ public class DocenteService(AppDbContext db)
                 dc.Id,
                 dc.DocenteId,
                 dc.Docente.Nombre,
-                dc.ColegioId,
+                dc.CodigoDane,
                 dc.Colegio.Nombre,
                 dc.Colegio.Sector,
                 dc.Activo
@@ -350,11 +350,119 @@ public class DocenteService(AppDbContext db)
                 dc.Id,
                 dc.DocenteId,
                 dc.Docente.Nombre,
-                dc.ColegioId,
+                dc.CodigoDane,
                 dc.Colegio.Nombre,
                 dc.Colegio.Sector,
                 dc.Activo
             ))
             .FirstOrDefaultAsync();
+    }
+}
+
+public class ColegioService(AppDbContext db)
+{
+    private static readonly HashSet<string> SectoresValidos = ["Publico", "Privado"];
+
+    private static string NormalizarSector(string sector)
+    {
+        var s = sector.Trim();
+        if (s.Equals("Publico", StringComparison.OrdinalIgnoreCase) ||
+            s.Equals("Público", StringComparison.OrdinalIgnoreCase))
+            return "Publico";
+        if (s.Equals("Privado", StringComparison.OrdinalIgnoreCase))
+            return "Privado";
+        return s;
+    }
+
+    private static string NormalizarCodigoDane(string codigoDane)
+        => new string(codigoDane.Where(char.IsDigit).ToArray());
+
+    private static void ValidarSector(string sector)
+    {
+        if (!SectoresValidos.Contains(sector))
+            throw new InvalidOperationException("Sector invalido. Use Publico o Privado.");
+    }
+
+    private static void ValidarCodigoDane(string codigoDane)
+    {
+        if (string.IsNullOrWhiteSpace(codigoDane))
+            throw new InvalidOperationException("El codigo DANE es obligatorio.");
+        if (codigoDane.Length > 12)
+            throw new InvalidOperationException("El codigo DANE no puede superar 12 digitos.");
+    }
+
+    public async Task<List<ColegioResponse>> ListarAsync()
+        => await db.Colegios
+            .OrderBy(c => c.Nombre)
+            .Select(c => new ColegioResponse(c.CodigoDane, c.Nombre, c.Sector))
+            .ToListAsync();
+
+    public async Task<ColegioResponse?> ObtenerPorCodigoAsync(string codigoDane)
+        => await db.Colegios
+            .Where(c => c.CodigoDane == codigoDane)
+            .Select(c => new ColegioResponse(c.CodigoDane, c.Nombre, c.Sector))
+            .FirstOrDefaultAsync();
+
+    public async Task<ColegioResponse> CrearAsync(CrearColegioRequest request)
+    {
+        var codigoDane = NormalizarCodigoDane(request.CodigoDane);
+        ValidarCodigoDane(codigoDane);
+
+        var nombre = request.Nombre.Trim();
+        if (string.IsNullOrWhiteSpace(nombre))
+            throw new InvalidOperationException("El nombre del colegio es obligatorio.");
+
+        var sector = NormalizarSector(request.Sector);
+        ValidarSector(sector);
+
+        if (await db.Colegios.AnyAsync(c => c.CodigoDane == codigoDane))
+            throw new InvalidOperationException("Ya existe un colegio con ese codigo DANE.");
+
+        if (await db.Colegios.AnyAsync(c => c.Nombre == nombre))
+            throw new InvalidOperationException("Ya existe un colegio con ese nombre.");
+
+        var colegio = new Colegio { CodigoDane = codigoDane, Nombre = nombre, Sector = sector };
+        db.Colegios.Add(colegio);
+        await db.SaveChangesAsync();
+        return new ColegioResponse(colegio.CodigoDane, colegio.Nombre, colegio.Sector);
+    }
+
+    public async Task<ColegioResponse> ActualizarAsync(string codigoDane, ActualizarColegioRequest request)
+    {
+        var colegio = await db.Colegios.FindAsync(codigoDane)
+            ?? throw new InvalidOperationException("Colegio no encontrado.");
+
+        var nombre = request.Nombre.Trim();
+        if (string.IsNullOrWhiteSpace(nombre))
+            throw new InvalidOperationException("El nombre del colegio es obligatorio.");
+
+        var sector = NormalizarSector(request.Sector);
+        ValidarSector(sector);
+
+        if (await db.Colegios.AnyAsync(c => c.Nombre == nombre && c.CodigoDane != codigoDane))
+            throw new InvalidOperationException("Ya existe otro colegio con ese nombre.");
+
+        colegio.Nombre = nombre;
+        colegio.Sector = sector;
+        await db.SaveChangesAsync();
+        return new ColegioResponse(colegio.CodigoDane, colegio.Nombre, colegio.Sector);
+    }
+
+    public async Task EliminarAsync(string codigoDane)
+    {
+        var colegio = await db.Colegios.FindAsync(codigoDane)
+            ?? throw new InvalidOperationException("Colegio no encontrado.");
+
+        if (await db.Matriculas.AnyAsync(m => m.CodigoDane == codigoDane))
+            throw new InvalidOperationException("No se puede eliminar el colegio porque tiene matriculas asociadas.");
+
+        if (await db.Usuarios.AnyAsync(u => u.CodigoDane == codigoDane))
+            throw new InvalidOperationException("No se puede eliminar el colegio porque tiene usuarios asociados.");
+
+        if (await db.DocenteColegios.AnyAsync(dc => dc.CodigoDane == codigoDane))
+            throw new InvalidOperationException("No se puede eliminar el colegio porque tiene docentes asignados.");
+
+        db.Colegios.Remove(colegio);
+        await db.SaveChangesAsync();
     }
 }

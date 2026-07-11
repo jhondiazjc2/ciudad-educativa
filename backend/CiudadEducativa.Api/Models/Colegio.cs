@@ -2,7 +2,7 @@ namespace CiudadEducativa.Api.Models;
 
 public class Colegio
 {
-    public int Id { get; set; }
+    public string CodigoDane { get; set; } = string.Empty;
     public string Nombre { get; set; } = string.Empty;
     public string Sector { get; set; } = string.Empty;
 

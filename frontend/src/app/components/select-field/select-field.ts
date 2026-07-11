@@ -8,13 +8,19 @@ import {
 } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
+export type SelectValue = string | number;
+
 export interface SelectOption {
-  id: number;
+  id: SelectValue;
   label: string;
 }
 
 export function toSelectOptions(items: { id: number; nombre: string }[]): SelectOption[] {
   return items.map((item) => ({ id: item.id, label: item.nombre }));
+}
+
+export function toColegioSelectOptions(items: { codigoDane: string; nombre: string }[]): SelectOption[] {
+  return items.map((item) => ({ id: item.codigoDane, label: `${item.codigoDane} — ${item.nombre}` }));
 }
 
 @Component({
@@ -34,23 +40,23 @@ export class SelectField implements ControlValueAccessor {
   @Input() disabled = false;
 
   readonly open = signal(false);
-  value = 0;
+  value: SelectValue = '';
 
-  private onChange: (value: number) => void = () => {};
+  private onChange: (value: SelectValue) => void = () => {};
   private onTouched: () => void = () => {};
 
   constructor(private host: ElementRef<HTMLElement>) {}
 
   get selectedLabel(): string {
-    if (!this.value) return this.placeholder;
+    if (this.isEmpty(this.value)) return this.placeholder;
     return this.options.find((o) => o.id === this.value)?.label ?? this.placeholder;
   }
 
-  writeValue(value: number | null): void {
-    this.value = value ?? 0;
+  writeValue(value: SelectValue | null): void {
+    this.value = value ?? '';
   }
 
-  registerOnChange(fn: (value: number) => void): void {
+  registerOnChange(fn: (value: SelectValue) => void): void {
     this.onChange = fn;
   }
 
@@ -70,11 +76,15 @@ export class SelectField implements ControlValueAccessor {
     this.onTouched();
   }
 
-  choose(id: number): void {
+  choose(id: SelectValue): void {
     this.value = id;
     this.onChange(id);
     this.onTouched();
     this.open.set(false);
+  }
+
+  private isEmpty(value: SelectValue): boolean {
+    return value === '' || value === 0 || value === null || value === undefined;
   }
 
   @HostListener('document:click', ['$event'])
