@@ -1,0 +1,33 @@
+<section class="login-page">
+  <div class="login-card">
+    <div class="login-brand">
+      <span class="logo">CE</span>
+      <h1>Ciudad Educativa</h1>
+      <p>Ingresa para gestionar matriculas</p>
+    </div>
+
+    @if (error) {
+      <div class="alert">{{ error }}</div>
+    }
+
+    <form (ngSubmit)="ingresar()">
+      <label>
+        Email
+        <input type="email" [(ngModel)]="email" name="email" autocomplete="username" required />
+      </label>
+      <label>
+        Contraseña
+        <input type="password" [(ngModel)]="password" name="password" autocomplete="current-password" required />
+      </label>
+      <button class="btn" type="submit" [disabled]="loading">
+        {{ loading ? 'Ingresando...' : 'Ingresar' }}
+      </button>
+    </form>
+
+    <div class="demo-users">
+      <p><strong>Usuarios de prueba:</strong></p>
+      <p>admin@ciudad.edu / Admin123!</p>
+      <p>colegio@ciudad.edu / Colegio123! (Colegio San Jose)</p>
+    </div>
+  </div>
+</section>

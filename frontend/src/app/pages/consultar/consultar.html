@@ -1,0 +1,110 @@
+<section class="page">
+  <header class="page-header">
+    <h1>Consultar estudiantes</h1>
+    <p>Filtra por colegio, grado y ano academico</p>
+  </header>
+
+  @if (error) { <div class="alert">{{ error }}</div> }
+
+  <div class="filters form-card">
+    <label>
+      Colegio
+      <select [(ngModel)]="colegioId" [disabled]="colegioBloqueado">
+        <option [ngValue]="0">Seleccionar...</option>
+        @for (c of colegios; track c.id) {
+          <option [ngValue]="c.id">{{ c.nombre }}</option>
+        }
+      </select>
+    </label>
+    <label>
+      Grado
+      <select [(ngModel)]="gradoId">
+        <option [ngValue]="0">Seleccionar...</option>
+        @for (g of grados; track g.id) {
+          <option [ngValue]="g.id">{{ g.nombre }}</option>
+        }
+      </select>
+    </label>
+    <label>
+      Ano
+      <select [(ngModel)]="anioAcademicoId">
+        <option [ngValue]="0">Seleccionar...</option>
+        @for (a of anios; track a.id) {
+          <option [ngValue]="a.id">{{ a.nombre }}</option>
+        }
+      </select>
+    </label>
+    <button class="btn" (click)="buscar()">Buscar</button>
+  </div>
+
+  @if (resultados.length) {
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Estudiante</th>
+            <th>Matricula</th>
+            <th>Edad</th>
+            <th>Grupo</th>
+            <th>Docente</th>
+            <th>Estado</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (r of resultados; track r.id) {
+            <tr>
+              <td>{{ r.nombreEstudiante }}</td>
+              <td>{{ r.numeroMatricula }}</td>
+              <td>{{ r.edad }}</td>
+              <td>{{ r.grupoNombre }}</td>
+              <td>{{ r.docenteDirector ?? '—' }}</td>
+              <td>
+                <span class="badge" [class.active]="r.activa">
+                  {{ r.activa ? 'Activa' : 'Historica' }}
+                </span>
+              </td>
+              <td>
+                <button class="btn link" (click)="verHistorico(r.estudianteId, r.nombreEstudiante)">
+                  Historico
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  } @else if (colegioId && gradoId && anioAcademicoId) {
+    <p class="muted">No hay estudiantes para estos filtros.</p>
+  }
+
+  @if (historico.length) {
+    <div class="form-card historico">
+      <h2>Historico de {{ estudianteSeleccionado }}</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Ano</th>
+            <th>Grado</th>
+            <th>Grupo</th>
+            <th>Colegio</th>
+            <th>Docente</th>
+            <th>Estado</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (h of historico; track h.anio) {
+            <tr>
+              <td>{{ h.anio }}</td>
+              <td>{{ h.grado }}</td>
+              <td>{{ h.grupo }}</td>
+              <td>{{ h.colegio }}</td>
+              <td>{{ h.docenteDirector ?? '—' }}</td>
+              <td>{{ h.activa ? 'Actual' : 'Anterior' }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</section>

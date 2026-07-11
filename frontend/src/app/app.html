@@ -1,0 +1,30 @@
+@if (auth.isLoggedIn()) {
+  <div class="layout">
+    <nav class="navbar">
+      <div class="brand">
+        <span class="logo">CE</span>
+        <div>
+          <strong>Ciudad Educativa</strong>
+          <small>Gestion de matriculas</small>
+        </div>
+      </div>
+      <div class="nav-right">
+        <div class="nav-links">
+          <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Reportes</a>
+          <a routerLink="/matricular" routerLinkActive="active">Matricular</a>
+          <a routerLink="/consultar" routerLinkActive="active">Consultar</a>
+          <a routerLink="/docentes" routerLinkActive="active">Docentes</a>
+        </div>
+        <div class="user-menu">
+          <span>{{ auth.user()?.nombre }} ({{ auth.user()?.rol }}@if (auth.user()?.colegioNombre) { · {{ auth.user()?.colegioNombre }}})</span>
+          <button class="btn secondary" (click)="logout()">Salir</button>
+        </div>
+      </div>
+    </nav>
+    <main class="content">
+      <router-outlet />
+    </main>
+  </div>
+} @else {
+  <router-outlet />
+}

@@ -1,0 +1,65 @@
+<section class="page">
+  <header class="page-header">
+    <h1>Matricular estudiante</h1>
+    <p>Registrar un estudiante en un colegio, grado y ano academico</p>
+  </header>
+
+  @if (mensaje) { <div class="alert success">{{ mensaje }}</div> }
+  @if (error) { <div class="alert">{{ error }}</div> }
+
+  <form class="form-card" (ngSubmit)="guardar()">
+    <div class="form-grid">
+      <label>
+        Nombre completo
+        <input type="text" [(ngModel)]="nombre" name="nombre" required />
+      </label>
+      <label>
+        Numero de matricula
+        <input type="text" [(ngModel)]="numeroMatricula" name="numeroMatricula" required />
+      </label>
+      <label>
+        Fecha de nacimiento
+        <input type="date" [(ngModel)]="fechaNacimiento" name="fechaNacimiento" required />
+      </label>
+      <label>
+        Colegio
+        <select [(ngModel)]="colegioId" name="colegioId" [disabled]="colegioBloqueado" required>
+          <option [ngValue]="0">Seleccionar...</option>
+          @for (c of colegios; track c.id) {
+            <option [ngValue]="c.id">{{ c.nombre }}</option>
+          }
+        </select>
+      </label>
+      <label>
+        Grado
+        <select [(ngModel)]="gradoId" name="gradoId" (ngModelChange)="onGradoChange()" required>
+          <option [ngValue]="0">Seleccionar...</option>
+          @for (g of grados; track g.id) {
+            <option [ngValue]="g.id">{{ g.nombre }}</option>
+          }
+        </select>
+      </label>
+      <label>
+        Grupo
+        <select [(ngModel)]="grupoId" name="grupoId" required>
+          <option [ngValue]="0">Seleccionar...</option>
+          @for (g of grupos; track g.id) {
+            <option [ngValue]="g.id">{{ g.nombre }} @if (g.docenteDirector) { (Dir: {{ g.docenteDirector }}) }</option>
+          }
+        </select>
+      </label>
+      <label>
+        Ano academico
+        <select [(ngModel)]="anioAcademicoId" name="anioAcademicoId" required>
+          <option [ngValue]="0">Seleccionar...</option>
+          @for (a of anios; track a.id) {
+            <option [ngValue]="a.id">{{ a.nombre }}</option>
+          }
+        </select>
+      </label>
+    </div>
+    <button class="btn" type="submit" [disabled]="enviando">
+      {{ enviando ? 'Guardando...' : 'Matricular estudiante' }}
+    </button>
+  </form>
+</section>

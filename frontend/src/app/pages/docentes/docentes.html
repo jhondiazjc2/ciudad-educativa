@@ -1,0 +1,60 @@
+<section class="page">
+  <header class="page-header">
+    <h1>Asignar docentes</h1>
+    <p>Un docente puede trabajar en varios colegios simultaneamente</p>
+  </header>
+
+  @if (mensaje) { <div class="alert success">{{ mensaje }}</div> }
+  @if (error) { <div class="alert">{{ error }}</div> }
+
+  <div class="form-card assign-form">
+    <label>
+      Docente
+      <select [(ngModel)]="docenteId">
+        <option [ngValue]="0">Seleccionar...</option>
+        @for (d of docentes; track d.id) {
+          <option [ngValue]="d.id">{{ d.nombre }}</option>
+        }
+      </select>
+    </label>
+    <label>
+      Colegio
+      <select [(ngModel)]="colegioId" [disabled]="colegioBloqueado">
+        <option [ngValue]="0">Seleccionar...</option>
+        @for (c of colegios; track c.id) {
+          <option [ngValue]="c.id">{{ c.nombre }}</option>
+        }
+      </select>
+    </label>
+    <button class="btn" (click)="asignar()">Asignar docente</button>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Docente</th>
+          <th>Colegio</th>
+          <th>Sector</th>
+          <th>Estado</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (a of asignaciones; track a.id) {
+          <tr>
+            <td>{{ a.docenteNombre }}</td>
+            <td>{{ a.colegioNombre }}</td>
+            <td>{{ a.sector }}</td>
+            <td>{{ a.activo ? 'Activo' : 'Inactivo' }}</td>
+            <td>
+              @if (a.activo) {
+                <button class="btn link danger" (click)="quitar(a.id)">Quitar</button>
+              }
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</section>
