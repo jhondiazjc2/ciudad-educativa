@@ -4,6 +4,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { catchError, EMPTY, finalize, timeout, Observable, tap } from 'rxjs';
 import { SelectField, SelectOption, toColegioSelectOptions, toSelectOptions } from '../../components/select-field/select-field';
 import { MatriculaForm } from '../../components/matricula-form/matricula-form';
+import { AccordionPanel } from '../../components/accordion-panel/accordion-panel';
 import { HistorialEstudianteTabla } from '../../components/historial-estudiante-tabla/historial-estudiante-tabla';
 import { ApiService } from '../../services/api.service';
 import { AuthService } from '../../services/auth.service';
@@ -12,10 +13,11 @@ import { CatalogoColegioItem, CatalogoDocumentoItem, CatalogoItem, GrupoItem, Hi
 
 const TODOS_COLEGIOS = '__all__';
 const PAGE_SIZE = 15;
+type SeccionEstudiantes = 'matricula' | 'edicion' | 'historial';
 
 @Component({
   selector: 'app-matricular',
-  imports: [FormsModule, SelectField, MatriculaForm, HistorialEstudianteTabla],
+  imports: [FormsModule, SelectField, MatriculaForm, HistorialEstudianteTabla, AccordionPanel],
   templateUrl: './matricular.html'
 })
 export class Matricular implements OnInit {
@@ -78,7 +80,8 @@ export class Matricular implements OnInit {
   historialNumeroDocumento = '';
   historialBusqueda = '';
 
-  readonly panelAbierto = signal<{ id: number; tipo: 'historial' | 'editar' | 'inactivar' } | null>(null);
+  readonly panelAbierto = signal<{ id: number; tipo: 'editar' | 'inactivar' } | null>(null);
+  readonly seccionAbierta = signal<SeccionEstudiantes | null>('matricula');
   readonly guardandoEdicion = signal(false);
   edicion = { nombre: '', fechaNacimiento: '', gradoId: 0, grupoId: 0, anio: new Date().getFullYear() };
   gruposEdicion: GrupoItem[] = [];
@@ -126,6 +129,7 @@ export class Matricular implements OnInit {
         this.codigoDane = this.auth.getCodigoDane()!;
         this.filtroCodigoDane = this.codigoDane;
         this.colegioBloqueado = true;
+        this.seccionAbierta.set('edicion');
         this.cargarListado();
       }
     });
@@ -152,6 +156,20 @@ export class Matricular implements OnInit {
   onGradoChange(): void {
     this.grupoId = 0;
     this.cargarGrupos();
+  }
+
+  alternarSeccion(id: SeccionEstudiantes): void {
+    const cerrando = this.seccionAbierta() === id;
+    this.seccionAbierta.set(cerrando ? null : id);
+    if (!cerrando && id === 'edicion' && this.matriculas().length === 0 && !this.cargandoListado()) {
+      this.cargarListado();
+    }
+  }
+
+  private scrollASeccion(panelId: string): void {
+    setTimeout(() => {
+      document.getElementById(panelId)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 50);
   }
 
   onFiltroChange(): void {
@@ -275,12 +293,12 @@ export class Matricular implements OnInit {
     }));
   }
 
-  esPanel(id: number, tipo: 'historial' | 'editar' | 'inactivar'): boolean {
+  esPanel(id: number, tipo: 'editar' | 'inactivar'): boolean {
     const abierto = this.panelAbierto();
     return abierto?.id === id && abierto.tipo === tipo;
   }
 
-  alternarPanel(m: MatriculaResponse, tipo: 'historial' | 'editar' | 'inactivar'): void {
+  alternarPanel(m: MatriculaResponse, tipo: 'editar' | 'inactivar'): void {
     if (this.esPanel(m.id, tipo)) {
       this.cerrarPanel();
       return;
@@ -288,16 +306,23 @@ export class Matricular implements OnInit {
 
     this.mensaje.set('');
     this.error.set('');
+    this.seccionAbierta.set('edicion');
     this.panelAbierto.set({ id: m.id, tipo });
 
-    if (tipo === 'historial') {
-      this.cargarHistorial(m.numeroDocumento || m.nombreEstudiante, { nombreFallback: m.nombreEstudiante }).subscribe();
-    } else if (tipo === 'editar') {
+    if (tipo === 'editar') {
       this.prepararEdicionInline(m);
-    } else if (tipo === 'inactivar') {
+    } else {
       this.inactivandoMatricula = m;
       this.motivoInactivacion = 'Traslado';
     }
+  }
+
+  verHistorialEstudiante(m: MatriculaResponse): void {
+    this.cerrarPanel();
+    this.seccionAbierta.set('historial');
+    this.historialBusqueda = m.numeroDocumento || m.nombreEstudiante;
+    this.cargarHistorial(this.historialBusqueda, { nombreFallback: m.nombreEstudiante }).subscribe();
+    this.scrollASeccion('seccion-historial');
   }
 
   cerrarPanel(): void {
@@ -426,6 +451,7 @@ export class Matricular implements OnInit {
       this.error.set('Ingrese nombre o documento para consultar el historial.');
       return;
     }
+    this.seccionAbierta.set('historial');
     this.cargarHistorial(termino).subscribe();
   }
 
@@ -446,7 +472,8 @@ export class Matricular implements OnInit {
 
     this.cancelarEdicion();
     this.aplicarDatosEstudiante(h, true);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    this.seccionAbierta.set('matricula');
+    this.scrollASeccion('seccion-matricula');
   }
 
   private aplicarDatosEstudiante(h: HistorialEstudianteCompleto, renovar: boolean): void {
@@ -480,7 +507,7 @@ export class Matricular implements OnInit {
   }
 
   abrirHistorialDesdeListado(m: MatriculaResponse): void {
-    this.alternarPanel(m, 'historial');
+    this.verHistorialEstudiante(m);
   }
 
   cerrarHistorial(): void {

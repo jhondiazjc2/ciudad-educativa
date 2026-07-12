@@ -57,8 +57,8 @@ App disponible en: http://localhost:4200
 
 | Email | Contraseña | Rol |
 |---|---|---|
-| admin@ciudad.edu | Admin123! | Admin |
-| colegio@ciudad.edu | Colegio123! | Colegio (solo **Colegio San Jose**) |
+| admin@ciudad.edu | Ciudad-Adm1n!2026 | Admin |
+| colegio@ciudad.edu | SanJose-C0l3gio!2026 | Colegio (solo **Colegio San Jose**) |
 
 ### Permisos por rol
 

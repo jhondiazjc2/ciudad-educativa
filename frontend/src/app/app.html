@@ -24,7 +24,7 @@
             }
           </div>
           <div class="flex items-center gap-3 text-sm text-muted">
-            <span>{{ auth.user()?.nombre }} ({{ auth.user()?.rol }}@if (auth.user()?.colegioNombre) { · {{ auth.user()?.colegioNombre }}})</span>
+            <span>{{ auth.nombreDisplay() }}</span>
             <button class="btn-secondary text-sm py-2 px-3" type="button" (click)="logout()">Salir</button>
           </div>
         </div>
@@ -62,7 +62,7 @@
           </div>
           <div class="mt-3 pt-3 border-t border-border flex flex-col gap-3">
             <span class="text-sm text-muted">
-              {{ auth.user()?.nombre }} ({{ auth.user()?.rol }}@if (auth.user()?.colegioNombre) { · {{ auth.user()?.colegioNombre }}})
+              {{ auth.nombreDisplay() }}
             </span>
             <button class="btn-secondary text-sm py-2 px-3 self-start" type="button" (click)="logout()">Salir</button>
           </div>

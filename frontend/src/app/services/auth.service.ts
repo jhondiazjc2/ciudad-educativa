@@ -81,6 +81,16 @@ export class AuthService {
     return this.user()?.codigoDane ?? null;
   }
 
+  nombreDisplay(): string {
+    const u = this.user();
+    if (!u) return '';
+    if (u.rol === 'Admin') return 'Admin';
+    if (u.colegioNombre) {
+      return u.colegioNombre.replace(/^Colegio\s+/i, '').trim();
+    }
+    return u.nombre;
+  }
+
   private loadUser(): AuthUser | null {
     const raw = sessionStorage.getItem(USER_KEY);
     if (!raw) return null;

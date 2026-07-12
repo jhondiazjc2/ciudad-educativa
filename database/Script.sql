@@ -242,11 +242,11 @@ INSERT INTO Matriculas (EstudianteId, CodigoDane, GradoId, GrupoId, AnioAcademic
 (10, N'105001000002', 4, (SELECT Id FROM Grupos WHERE CodigoDane = N'105001000002' AND GradoId = 4 AND Nombre = '301'), 3, 1, '2026-01-20');
 
 -- Usuarios: contraseñas hasheadas con BCrypt (factor 11)
--- admin@ciudad.edu  -> Admin123!
--- colegio@ciudad.edu -> Colegio123!
+-- admin@ciudad.edu   -> Ciudad-Adm1n!2026
+-- colegio@ciudad.edu -> SanJose-C0l3gio!2026
 INSERT INTO Usuarios (Email, PasswordHash, Nombre, Rol, CodigoDane, Activo) VALUES
-(N'admin@ciudad.edu', N'$2b$11$nNZkAZIKhHTodb5Ak3u28ewtMv8m7xuyXzSt/6nWrJeq2FGiMVj3O', N'Administrador Ciudad', N'Admin', NULL, 1),
-(N'colegio@ciudad.edu', N'$2b$11$hA1laYOjMi5UDcNuTV6HtuFIwD.i3BkwqCOWFDNU0Q4X.95khouIm', N'Administrador Colegio', N'Colegio', N'105001000001', 1);
+(N'admin@ciudad.edu', N'$2a$11$ajFpbfQzDkOoKxFtoa8Oiu1jmcb5IeH8.68DVHXdVAExiX59sAXki', N'Admin', N'Admin', NULL, 1),
+(N'colegio@ciudad.edu', N'$2a$11$861XtV9VNZ/L1eP2gw1LS.j79j1aAjQUeanYBh6aUyGRLe26rJe2m', N'Admin', N'Colegio', N'105001000001', 1);
 
 GO
 

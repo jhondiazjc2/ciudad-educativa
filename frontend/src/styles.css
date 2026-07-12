@@ -60,6 +60,47 @@
     @apply bg-white border border-border rounded-xl p-5 shadow-sm overflow-visible relative z-0;
   }
 
+  .accordion-panel {
+    @apply bg-white border border-border rounded-xl shadow-sm overflow-hidden;
+  }
+
+  .accordion-trigger {
+    @apply w-full flex items-center gap-4 px-5 py-4 text-left bg-white border-0 cursor-pointer transition-colors;
+    @apply hover:bg-primary-light/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-inset;
+  }
+
+  .accordion-panel.is-open .accordion-trigger {
+    @apply bg-primary-light/30;
+  }
+
+  .accordion-step {
+    @apply flex shrink-0 items-center justify-center w-8 h-8 rounded-full bg-accent text-white text-sm font-bold;
+  }
+
+  .accordion-heading {
+    @apply flex-1 min-w-0;
+  }
+
+  .accordion-title {
+    @apply block text-base font-semibold text-primary-dark;
+  }
+
+  .accordion-subtitle {
+    @apply block text-sm text-muted mt-0.5;
+  }
+
+  .accordion-chevron {
+    @apply w-5 h-5 shrink-0 text-muted transition-transform duration-200;
+  }
+
+  .accordion-panel.is-open .accordion-chevron {
+    @apply rotate-180 text-accent;
+  }
+
+  .accordion-body {
+    @apply border-t border-border px-5 py-5;
+  }
+
   .select-trigger {
     @apply w-full px-3 py-2.5 border border-border rounded-lg bg-white text-left flex items-center justify-between gap-2 cursor-pointer text-primary-dark;
     @apply focus:outline-none focus:border-accent disabled:opacity-60 disabled:cursor-not-allowed;

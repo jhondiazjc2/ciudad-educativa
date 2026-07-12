@@ -134,7 +134,7 @@
 
     <article
       class="card border-primary bg-gradient-to-b from-white to-primary-light transition-all hover:shadow-md hover:-translate-y-0.5"
-      [class.lg:col-span-2]="!auth.isAdmin()"
+      [class.lg:col-span-2]="auth.isAdmin()"
     >
       <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
         <div>

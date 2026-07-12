@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { HttpErrorResponse } from '@angular/common/http';
 import { AuthService } from '../../services/auth.service';
 import { environment } from '../../../environments/environment';
 
@@ -31,9 +32,15 @@ export class Login {
         this.loading = false;
         this.router.navigate(['/']);
       },
-      error: () => {
+      error: (err: HttpErrorResponse) => {
         this.loading = false;
-        this.error = 'Credenciales inválidas. Verifica tu email y contraseña.';
+        if (err.status === 0) {
+          this.error = 'No se pudo conectar con el servidor. Verifica que el backend esté corriendo.';
+        } else if (err.status === 503) {
+          this.error = 'El servidor no está disponible en este momento. Intenta de nuevo en unos segundos.';
+        } else {
+          this.error = 'Credenciales inválidas. Verifica tu email y contraseña.';
+        }
       }
     });
   }

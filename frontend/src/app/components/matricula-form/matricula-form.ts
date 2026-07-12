@@ -41,6 +41,7 @@ export class MatriculaForm {
   @Input({ required: true }) grupoOptions!: SelectOption[];
 
   @Input() enEdicion = false;
+  @Input() embedded = false;
   @Input() editandoMatriculaId: number | null = null;
   @Input() colegioBloqueado = false;
   @Input() enviando = false;

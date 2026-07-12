@@ -1,4 +1,4 @@
-<form class="filter-panel mb-8" (ngSubmit)="submitForm.emit()">
+<form [class.filter-panel]="!embedded" [class.mb-8]="!embedded" (ngSubmit)="submitForm.emit()">
   @if (enEdicion) {
     <p class="text-sm text-primary-dark font-medium mb-4 m-0">Editando matrícula #{{ editandoMatriculaId }}</p>
   } @else {

@@ -1,7 +1,7 @@
 <section>
   <header class="mb-6">
     <h1 class="text-3xl font-bold text-primary-dark m-0 mb-1">Estudiantes</h1>
-    <p class="text-muted m-0">Matricular, renovar al siguiente año, consultar historial e inactivar matrículas.</p>
+    <p class="text-muted m-0">Matricular, editar matrículas activas y consultar el historial académico por estudiante.</p>
   </header>
 
   @if (mensaje()) { <div class="alert-success">{{ mensaje() }}</div> }
@@ -9,313 +9,305 @@
     <div #errorAlert class="alert-error" role="alert">{{ error() }}</div>
   }
 
-  <app-matricula-form
-    [(nombre)]="nombre"
-    [(tipoDocumento)]="tipoDocumento"
-    [(numeroDocumento)]="numeroDocumento"
-    [(fechaNacimiento)]="fechaNacimiento"
-    [(codigoDane)]="codigoDane"
-    [(gradoId)]="gradoId"
-    [(grupoId)]="grupoId"
-    [(anio)]="anio"
-    [anioMin]="anioMin"
-    [anioMax]="anioMax"
-    [tiposDocumento]="tiposDocumento"
-    [colegioOptions]="colegioOptions"
-    [gradoOptions]="gradoOptions"
-    [grupoOptions]="grupoOptions"
-    [enEdicion]="enEdicion"
-    [editandoMatriculaId]="editandoMatriculaId"
-    [colegioBloqueado]="colegioBloqueado"
-    [enviando]="enviando()"
-    [buscandoEstudiante]="buscandoEstudiante()"
-    (submitForm)="guardar()"
-    (cancelar)="cancelarEdicion()"
-    (buscarEstudiante)="buscarEstudianteEnFormulario()"
-    (colegioChange)="onColegioFormChange()"
-    (gradoChange)="onGradoChange()"
-  />
+  <div class="flex flex-col gap-3">
+    <app-accordion-panel
+      panelId="seccion-matricula"
+      step="1"
+      title="Matricular nuevo estudiante"
+      subtitle="Primera matrícula o renovación al siguiente año académico."
+      [open]="seccionAbierta() === 'matricula'"
+      (toggle)="alternarSeccion('matricula')"
+    >
+      <app-matricula-form
+        [embedded]="true"
+        [(nombre)]="nombre"
+        [(tipoDocumento)]="tipoDocumento"
+        [(numeroDocumento)]="numeroDocumento"
+        [(fechaNacimiento)]="fechaNacimiento"
+        [(codigoDane)]="codigoDane"
+        [(gradoId)]="gradoId"
+        [(grupoId)]="grupoId"
+        [(anio)]="anio"
+        [anioMin]="anioMin"
+        [anioMax]="anioMax"
+        [tiposDocumento]="tiposDocumento"
+        [colegioOptions]="colegioOptions"
+        [gradoOptions]="gradoOptions"
+        [grupoOptions]="grupoOptions"
+        [enEdicion]="enEdicion"
+        [editandoMatriculaId]="editandoMatriculaId"
+        [colegioBloqueado]="colegioBloqueado"
+        [enviando]="enviando()"
+        [buscandoEstudiante]="buscandoEstudiante()"
+        (submitForm)="guardar()"
+        (cancelar)="cancelarEdicion()"
+        (buscarEstudiante)="buscarEstudianteEnFormulario()"
+        (colegioChange)="onColegioFormChange()"
+        (gradoChange)="onGradoChange()"
+      />
+    </app-accordion-panel>
 
-  <div class="mb-4">
-    <h2 class="text-xl font-semibold text-primary-dark m-0 mb-1">Matrículas del colegio</h2>
-    <p class="text-muted m-0 mb-4 text-sm">
-      @if (colegioBloqueado) {
-        Solo se muestran estudiantes de su colegio.
+    <app-accordion-panel
+      panelId="seccion-edicion"
+      step="2"
+      title="Editar matrículas"
+      subtitle="Busque estudiantes, actualice datos o inactivar matrículas activas."
+      [open]="seccionAbierta() === 'edicion'"
+      (toggle)="alternarSeccion('edicion')"
+    >
+      <p class="text-muted m-0 mb-4 text-sm">
+        @if (colegioBloqueado) {
+          Solo se muestran estudiantes de su colegio.
+        } @else {
+          Puede buscar en todos los colegios o filtrar por uno en particular.
+        }
+        Al buscar por nombre/documento o consultar un <strong>año anterior</strong>, también aparecen matrículas inactivas.
+      </p>
+
+      <div class="filter-panel grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4 items-end mb-4">
+        <label class="label min-w-0 lg:col-span-2">
+          Buscar estudiante
+          <input
+            class="input"
+            type="search"
+            [(ngModel)]="filtroBusqueda"
+            name="filtroBusqueda"
+            placeholder="Nombre o número de documento"
+            (keydown.enter)="cargarListado()"
+          />
+        </label>
+        <label class="label min-w-0">
+          Colegio
+          <app-select-field
+            [(ngModel)]="filtroCodigoDane"
+            name="filtroCodigoDane"
+            [options]="filtroColegioOptions"
+            [disabled]="colegioBloqueado"
+            (ngModelChange)="onFiltroChange()"
+          />
+        </label>
+        <label class="label min-w-0">
+          Año académico
+          <input
+            class="input"
+            type="number"
+            [(ngModel)]="filtroAnio"
+            name="filtroAnio"
+            [min]="anioMin"
+            [max]="anioMax"
+            step="1"
+            (ngModelChange)="onFiltroChange()"
+          />
+        </label>
+        <label class="label min-w-0">
+          Grado
+          <app-select-field
+            [(ngModel)]="filtroGradoId"
+            name="filtroGradoId"
+            [options]="filtroGradoOptions"
+            (ngModelChange)="onFiltroChange()"
+          />
+        </label>
+        <button class="btn self-end" type="button" (click)="cargarListado()" [disabled]="cargandoListado()">
+          {{ cargandoListado() ? 'Cargando...' : 'Actualizar listado' }}
+        </button>
+      </div>
+
+      @if (cargandoListado()) {
+        <p class="text-muted m-0">Cargando matrículas...</p>
       } @else {
-        Puede buscar en todos los colegios o filtrar por uno en particular.
-      }
-      Al buscar por nombre/documento o consultar un <strong>año anterior</strong>, también aparecen matrículas inactivas.
-    </p>
-
-    <div class="filter-panel grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4 items-end mb-4">
-      <label class="label min-w-0 lg:col-span-2">
-        Buscar estudiante
-        <input
-          class="input"
-          type="search"
-          [(ngModel)]="filtroBusqueda"
-          name="filtroBusqueda"
-          placeholder="Nombre o número de documento"
-          (keydown.enter)="cargarListado()"
-        />
-      </label>
-      <label class="label min-w-0">
-        Colegio
-        <app-select-field
-          [(ngModel)]="filtroCodigoDane"
-          name="filtroCodigoDane"
-          [options]="filtroColegioOptions"
-          [disabled]="colegioBloqueado"
-          (ngModelChange)="onFiltroChange()"
-        />
-      </label>
-      <label class="label min-w-0">
-        Año académico
-        <input
-          class="input"
-          type="number"
-          [(ngModel)]="filtroAnio"
-          name="filtroAnio"
-          [min]="anioMin"
-          [max]="anioMax"
-          step="1"
-          (ngModelChange)="onFiltroChange()"
-        />
-      </label>
-      <label class="label min-w-0">
-        Grado
-        <app-select-field
-          [(ngModel)]="filtroGradoId"
-          name="filtroGradoId"
-          [options]="filtroGradoOptions"
-          (ngModelChange)="onFiltroChange()"
-        />
-      </label>
-      <button class="btn self-end" type="button" (click)="cargarListado()" [disabled]="cargandoListado()">
-        {{ cargandoListado() ? 'Cargando...' : 'Actualizar listado' }}
-      </button>
-    </div>
-  </div>
-
-  @if (cargandoListado()) {
-    <p class="text-muted">Cargando matrículas...</p>
-  } @else {
-    <div class="overflow-x-auto">
-      <table class="w-full border-collapse bg-white border border-border rounded-xl overflow-hidden">
-        <thead>
-          <tr class="bg-secondary text-primary-dark text-xs uppercase tracking-wide">
-            <th class="px-4 py-3 text-left">Estudiante</th>
-            <th class="px-4 py-3 text-left">Documento</th>
-            @if (mostrarColumnaColegio) {
-              <th class="px-4 py-3 text-left">Colegio</th>
-            }
-            <th class="px-4 py-3 text-left">Grado</th>
-            <th class="px-4 py-3 text-left">Grupo</th>
-            <th class="px-4 py-3 text-left">Año</th>
-            <th class="px-4 py-3 text-left">Docente</th>
-            <th class="px-4 py-3 text-left">Estado</th>
-            <th class="px-4 py-3 text-left"></th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (m of matriculasPagina(); track m.id) {
-            <tr class="border-t border-border" [class.bg-primary-light/30]="panelAbierto()?.id === m.id" [class.opacity-75]="!m.activa">
-              <td class="px-4 py-3">{{ m.nombreEstudiante }}</td>
-              <td class="px-4 py-3">{{ m.tipoDocumento }} {{ m.numeroDocumento }}</td>
-              @if (mostrarColumnaColegio) {
-                <td class="px-4 py-3">{{ m.colegioNombre }}</td>
-              }
-              <td class="px-4 py-3">{{ m.gradoNombre }}</td>
-              <td class="px-4 py-3">{{ m.grupoNombre }}</td>
-              <td class="px-4 py-3">{{ m.anio }}</td>
-              <td class="px-4 py-3">{{ m.docenteDirector ?? '—' }}</td>
-              <td class="px-4 py-3">
-                @if (m.activa) {
-                  <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-semibold bg-primary-light text-accent">Activa</span>
-                } @else {
-                  <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-semibold bg-secondary-dark text-muted">Inactiva</span>
+        <div class="overflow-x-auto">
+          <table class="w-full border-collapse bg-white border border-border rounded-xl overflow-hidden">
+            <thead>
+              <tr class="bg-secondary text-primary-dark text-xs uppercase tracking-wide">
+                <th class="px-4 py-3 text-left">Estudiante</th>
+                <th class="px-4 py-3 text-left">Documento</th>
+                @if (mostrarColumnaColegio) {
+                  <th class="px-4 py-3 text-left">Colegio</th>
                 }
-              </td>
-              <td class="px-4 py-3 whitespace-nowrap">
-                <button
-                  class="btn-link mr-3"
-                  type="button"
-                  [class.font-bold]="esPanel(m.id, 'historial')"
-                  (click)="alternarPanel(m, 'historial')"
-                >Historial</button>
-                @if (m.activa) {
-                  <button
-                    class="btn-link mr-3"
-                    type="button"
-                    [class.font-bold]="esPanel(m.id, 'editar')"
-                    (click)="alternarPanel(m, 'editar')"
-                  >Editar</button>
-                  <button
-                    class="btn-link text-red-700 hover:text-red-900"
-                    type="button"
-                    [class.font-bold]="esPanel(m.id, 'inactivar')"
-                    (click)="alternarPanel(m, 'inactivar')"
-                  >Inactivar</button>
-                } @else {
-                  <button class="btn-link font-semibold" type="button" (click)="renovarDesdeListado(m)">Renovar</button>
-                }
-              </td>
-            </tr>
-
-            @if (panelAbierto()?.id === m.id) {
-              <tr class="bg-secondary/40">
-                <td class="px-4 py-4" [attr.colspan]="mostrarColumnaColegio ? 9 : 8">
-
-                  @if (esPanel(m.id, 'editar')) {
-                    <div class="rounded-xl border border-border bg-white p-4">
-                      <h3 class="text-base font-semibold text-primary-dark m-0 mb-3">Editar matrícula de {{ m.nombreEstudiante }}</h3>
-                      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
-                        <label class="label min-w-0">
-                          Nombre completo
-                          <input class="input" type="text" [(ngModel)]="edicion.nombre" name="edicionNombre" required />
-                        </label>
-                        <label class="label min-w-0">
-                          Fecha de nacimiento
-                          <input class="input" type="date" [(ngModel)]="edicion.fechaNacimiento" name="edicionFecha" required />
-                        </label>
-                        <label class="label min-w-0">
-                          Año académico
-                          <input class="input" type="number" [(ngModel)]="edicion.anio" name="edicionAnio" [min]="anioMin" [max]="anioMax" step="1" required />
-                        </label>
-                        <label class="label min-w-0">
-                          Grado
-                          <app-select-field
-                            [(ngModel)]="edicion.gradoId"
-                            name="edicionGrado"
-                            [options]="gradoOptions"
-                            (ngModelChange)="onGradoEdicionChange(m)"
-                          />
-                        </label>
-                        <label class="label min-w-0">
-                          Grupo
-                          <app-select-field
-                            [(ngModel)]="edicion.grupoId"
-                            name="edicionGrupo"
-                            [options]="grupoEdicionOptions"
-                          />
-                        </label>
-                      </div>
-                      <div class="flex flex-wrap gap-2">
-                        <button class="btn" type="button" (click)="guardarEdicionInline(m)" [disabled]="guardandoEdicion()">
-                          {{ guardandoEdicion() ? 'Guardando...' : 'Actualizar matrícula' }}
-                        </button>
-                        <button class="btn-secondary" type="button" (click)="cerrarPanel()">Cancelar</button>
-                      </div>
-                    </div>
-                  }
-
-                  @if (esPanel(m.id, 'inactivar')) {
-                    <div class="rounded-xl border border-red-200 bg-red-50/60 p-4">
-                      <h3 class="text-base font-semibold text-primary-dark m-0 mb-2">Inactivar matrícula de {{ m.nombreEstudiante }}</h3>
-                      <p class="text-sm text-muted m-0 mb-4">
-                        {{ m.colegioNombre }} · {{ m.gradoNombre }} {{ m.grupoNombre }} ({{ m.anio }}).
-                        Al inactivar, el estudiante podrá matricularse en otro colegio o en el siguiente año.
-                      </p>
-                      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
-                        @for (motivo of motivosInactivacion; track motivo.id) {
-                          <label
-                            class="flex gap-3 items-start p-3 rounded-xl border cursor-pointer transition-colors"
-                            [class.border-accent]="motivoInactivacion === motivo.id"
-                            [class.bg-white]="motivoInactivacion === motivo.id"
-                            [class.border-border]="motivoInactivacion !== motivo.id"
-                          >
-                            <input type="radio" class="mt-1" name="motivoInactivacion" [value]="motivo.id" [(ngModel)]="motivoInactivacion" />
-                            <span>
-                              <span class="block font-semibold text-primary-dark">{{ motivo.label }}</span>
-                              <span class="block text-xs text-muted mt-1">{{ motivo.descripcion }}</span>
-                            </span>
-                          </label>
-                        }
-                      </div>
-                      <div class="flex flex-wrap gap-2">
-                        <button class="btn" type="button" (click)="confirmarInactivacion()">Confirmar inactivación</button>
-                        <button class="btn-secondary" type="button" (click)="cerrarPanel()">Cancelar</button>
-                      </div>
-                    </div>
-                  }
-
-                  @if (esPanel(m.id, 'historial')) {
-                    <div class="rounded-xl border border-border bg-white p-4">
-                      <div class="flex items-center justify-between gap-3 mb-3">
-                        <h3 class="text-base font-semibold text-primary-dark m-0">Historial de {{ m.nombreEstudiante }}</h3>
-                        <button class="btn-link" type="button" (click)="cerrarPanel()">Cerrar</button>
-                      </div>
-                      @if (cargandoHistorial()) {
-                        <p class="text-muted m-0">Cargando historial...</p>
-                      } @else if (historial(); as h) {
-                        <app-historial-estudiante-tabla [registros]="h.registros" [compact]="true" />
-                        @if (!h.tieneMatriculaActiva) {
-                          <div class="mt-3 flex items-center gap-3">
-                            <span class="text-sm text-muted">Sin matrícula activa — disponible para renovación.</span>
-                            <button class="btn text-sm py-2 px-3" type="button" (click)="renovarSiguienteCiclo()">Renovar siguiente año</button>
-                          </div>
-                        }
-                      }
-                    </div>
-                  }
-
-                </td>
+                <th class="px-4 py-3 text-left">Grado</th>
+                <th class="px-4 py-3 text-left">Grupo</th>
+                <th class="px-4 py-3 text-left">Año</th>
+                <th class="px-4 py-3 text-left">Docente</th>
+                <th class="px-4 py-3 text-left">Estado</th>
+                <th class="px-4 py-3 text-left"></th>
               </tr>
-            }
-          } @empty {
-            <tr>
-              <td class="px-4 py-6 text-muted" [attr.colspan]="mostrarColumnaColegio ? 9 : 8">
-                @if (filtroBusqueda.trim() || filtroAnio < anio) {
-                  No hay matrículas para estos filtros.
-                } @else {
-                  No hay matrículas activas para este año. Pruebe un año anterior para ver históricas/inactivas.
-                }
-              </td>
-            </tr>
-          }
-        </tbody>
-      </table>
-    </div>
+            </thead>
+            <tbody>
+              @for (m of matriculasPagina(); track m.id) {
+                <tr class="border-t border-border" [class.bg-primary-light/30]="panelAbierto()?.id === m.id" [class.opacity-75]="!m.activa">
+                  <td class="px-4 py-3">{{ m.nombreEstudiante }}</td>
+                  <td class="px-4 py-3">{{ m.tipoDocumento }} {{ m.numeroDocumento }}</td>
+                  @if (mostrarColumnaColegio) {
+                    <td class="px-4 py-3">{{ m.colegioNombre }}</td>
+                  }
+                  <td class="px-4 py-3">{{ m.gradoNombre }}</td>
+                  <td class="px-4 py-3">{{ m.grupoNombre }}</td>
+                  <td class="px-4 py-3">{{ m.anio }}</td>
+                  <td class="px-4 py-3">{{ m.docenteDirector ?? '—' }}</td>
+                  <td class="px-4 py-3">
+                    @if (m.activa) {
+                      <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-semibold bg-primary-light text-accent">Activa</span>
+                    } @else {
+                      <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-semibold bg-secondary-dark text-muted">Inactiva</span>
+                    }
+                  </td>
+                  <td class="px-4 py-3 whitespace-nowrap">
+                    <button class="btn-link mr-3" type="button" (click)="verHistorialEstudiante(m)">Historial</button>
+                    @if (m.activa) {
+                      <button
+                        class="btn-link mr-3"
+                        type="button"
+                        [class.font-bold]="esPanel(m.id, 'editar')"
+                        (click)="alternarPanel(m, 'editar')"
+                      >Editar</button>
+                      <button
+                        class="btn-link text-red-700 hover:text-red-900"
+                        type="button"
+                        [class.font-bold]="esPanel(m.id, 'inactivar')"
+                        (click)="alternarPanel(m, 'inactivar')"
+                      >Inactivar</button>
+                    } @else {
+                      <button class="btn-link font-semibold" type="button" (click)="renovarDesdeListado(m)">Renovar</button>
+                    }
+                  </td>
+                </tr>
 
-    @if (totalRegistros() > 0) {
-      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-4 px-1">
-        <p class="text-sm text-muted m-0">
-          Mostrando {{ rangoInicio() }}–{{ rangoFin() }} de {{ totalRegistros() }} matrículas
-        </p>
-        @if (totalPaginas() > 1) {
-          <div class="flex items-center gap-2">
-            <button
-              class="btn-secondary text-sm py-1.5 px-3"
-              type="button"
-              (click)="paginaAnterior()"
-              [disabled]="paginaActual() <= 1"
-            >
-              Anterior
-            </button>
-            <span class="text-sm text-primary-dark font-medium px-2">
-              Página {{ paginaActual() }} de {{ totalPaginas() }}
-            </span>
-            <button
-              class="btn-secondary text-sm py-1.5 px-3"
-              type="button"
-              (click)="paginaSiguiente()"
-              [disabled]="paginaActual() >= totalPaginas()"
-            >
-              Siguiente
-            </button>
+                @if (panelAbierto()?.id === m.id) {
+                  <tr class="bg-secondary/40">
+                    <td class="px-4 py-4" [attr.colspan]="mostrarColumnaColegio ? 9 : 8">
+                      @if (esPanel(m.id, 'editar')) {
+                        <div class="rounded-xl border border-border bg-white p-4">
+                          <h3 class="text-base font-semibold text-primary-dark m-0 mb-3">Editar matrícula de {{ m.nombreEstudiante }}</h3>
+                          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+                            <label class="label min-w-0">
+                              Nombre completo
+                              <input class="input" type="text" [(ngModel)]="edicion.nombre" name="edicionNombre" required />
+                            </label>
+                            <label class="label min-w-0">
+                              Fecha de nacimiento
+                              <input class="input" type="date" [(ngModel)]="edicion.fechaNacimiento" name="edicionFecha" required />
+                            </label>
+                            <label class="label min-w-0">
+                              Año académico
+                              <input class="input" type="number" [(ngModel)]="edicion.anio" name="edicionAnio" [min]="anioMin" [max]="anioMax" step="1" required />
+                            </label>
+                            <label class="label min-w-0">
+                              Grado
+                              <app-select-field
+                                [(ngModel)]="edicion.gradoId"
+                                name="edicionGrado"
+                                [options]="gradoOptions"
+                                (ngModelChange)="onGradoEdicionChange(m)"
+                              />
+                            </label>
+                            <label class="label min-w-0">
+                              Grupo
+                              <app-select-field
+                                [(ngModel)]="edicion.grupoId"
+                                name="edicionGrupo"
+                                [options]="grupoEdicionOptions"
+                              />
+                            </label>
+                          </div>
+                          <div class="flex flex-wrap gap-2">
+                            <button class="btn" type="button" (click)="guardarEdicionInline(m)" [disabled]="guardandoEdicion()">
+                              {{ guardandoEdicion() ? 'Guardando...' : 'Actualizar matrícula' }}
+                            </button>
+                            <button class="btn-secondary" type="button" (click)="cerrarPanel()">Cancelar</button>
+                          </div>
+                        </div>
+                      }
+
+                      @if (esPanel(m.id, 'inactivar')) {
+                        <div class="rounded-xl border border-red-200 bg-red-50/60 p-4">
+                          <h3 class="text-base font-semibold text-primary-dark m-0 mb-2">Inactivar matrícula de {{ m.nombreEstudiante }}</h3>
+                          <p class="text-sm text-muted m-0 mb-4">
+                            {{ m.colegioNombre }} · {{ m.gradoNombre }} {{ m.grupoNombre }} ({{ m.anio }}).
+                            Al inactivar, el estudiante podrá matricularse en otro colegio o en el siguiente año.
+                          </p>
+                          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+                            @for (motivo of motivosInactivacion; track motivo.id) {
+                              <label
+                                class="flex gap-3 items-start p-3 rounded-xl border cursor-pointer transition-colors"
+                                [class.border-accent]="motivoInactivacion === motivo.id"
+                                [class.bg-white]="motivoInactivacion === motivo.id"
+                                [class.border-border]="motivoInactivacion !== motivo.id"
+                              >
+                                <input type="radio" class="mt-1" name="motivoInactivacion" [value]="motivo.id" [(ngModel)]="motivoInactivacion" />
+                                <span>
+                                  <span class="block font-semibold text-primary-dark">{{ motivo.label }}</span>
+                                  <span class="block text-xs text-muted mt-1">{{ motivo.descripcion }}</span>
+                                </span>
+                              </label>
+                            }
+                          </div>
+                          <div class="flex flex-wrap gap-2">
+                            <button class="btn" type="button" (click)="confirmarInactivacion()">Confirmar inactivación</button>
+                            <button class="btn-secondary" type="button" (click)="cerrarPanel()">Cancelar</button>
+                          </div>
+                        </div>
+                      }
+                    </td>
+                  </tr>
+                }
+              } @empty {
+                <tr>
+                  <td class="px-4 py-6 text-muted" [attr.colspan]="mostrarColumnaColegio ? 9 : 8">
+                    @if (filtroBusqueda.trim() || filtroAnio < anio) {
+                      No hay matrículas para estos filtros.
+                    } @else {
+                      No hay matrículas activas para este año. Pruebe un año anterior para ver históricas/inactivas.
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        @if (totalRegistros() > 0) {
+          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-4 px-1">
+            <p class="text-sm text-muted m-0">
+              Mostrando {{ rangoInicio() }}–{{ rangoFin() }} de {{ totalRegistros() }} matrículas
+            </p>
+            @if (totalPaginas() > 1) {
+              <div class="flex items-center gap-2">
+                <button
+                  class="btn-secondary text-sm py-1.5 px-3"
+                  type="button"
+                  (click)="paginaAnterior()"
+                  [disabled]="paginaActual() <= 1"
+                >
+                  Anterior
+                </button>
+                <span class="text-sm text-primary-dark font-medium px-2">
+                  Página {{ paginaActual() }} de {{ totalPaginas() }}
+                </span>
+                <button
+                  class="btn-secondary text-sm py-1.5 px-3"
+                  type="button"
+                  (click)="paginaSiguiente()"
+                  [disabled]="paginaActual() >= totalPaginas()"
+                >
+                  Siguiente
+                </button>
+              </div>
+            }
           </div>
         }
-      </div>
-    }
-  }
+      }
+    </app-accordion-panel>
 
-  <div class="card mt-8">
-    <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4 mb-4">
-      <div>
-        <h2 class="text-xl font-semibold text-primary-dark m-0 mb-1">Historial académico</h2>
-        <p class="text-sm text-muted m-0">Consulte por nombre o documento. Incluye matrículas activas e inactivas.</p>
-      </div>
-      <div class="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-3 items-end">
+    <app-accordion-panel
+      panelId="seccion-historial"
+      step="3"
+      title="Consultar historial por estudiante"
+      subtitle="Trayectoria académica completa: matrículas activas e inactivas."
+      [open]="seccionAbierta() === 'historial'"
+      (toggle)="alternarSeccion('historial')"
+    >
+      <div class="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-3 items-end mb-4">
         <label class="label min-w-0">
           Nombre o documento
           <input
@@ -331,37 +323,39 @@
           {{ cargandoHistorial() ? 'Consultando...' : 'Consultar historial' }}
         </button>
       </div>
-    </div>
 
-    @if (cargandoHistorial()) {
-      <p class="text-muted">Cargando historial...</p>
-    } @else if (historial(); as h) {
-      <div class="mb-4 p-4 rounded-xl bg-secondary/60 border border-border">
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-          <div>
-            <p class="font-semibold text-primary-dark m-0">{{ h.nombre }}</p>
-            <p class="text-sm text-muted m-0">{{ h.tipoDocumento }} {{ h.numeroDocumento }}</p>
-          </div>
-          @if (h.tieneMatriculaActiva) {
-            <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold bg-primary-light text-accent">
-              Matrícula activa: {{ h.colegioActivo }} ({{ h.anioActivo }})
-            </span>
-          } @else {
-            <div class="flex flex-col sm:items-end gap-2">
-              <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold bg-secondary-dark text-muted">
-                Sin matrícula activa — disponible para renovación
-              </span>
-              <button class="btn text-sm py-2 px-3" type="button" (click)="renovarSiguienteCiclo()">
-                Renovar siguiente año
-              </button>
+      @if (cargandoHistorial()) {
+        <p class="text-muted m-0">Cargando historial...</p>
+      } @else if (historial(); as h) {
+        <div class="mb-4 p-4 rounded-xl bg-secondary/60 border border-border">
+          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <div>
+              <p class="font-semibold text-primary-dark m-0">{{ h.nombre }}</p>
+              <p class="text-sm text-muted m-0">{{ h.tipoDocumento }} {{ h.numeroDocumento }}</p>
             </div>
-          }
+            @if (h.tieneMatriculaActiva) {
+              <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold bg-primary-light text-accent">
+                Matrícula activa: {{ h.colegioActivo }} ({{ h.anioActivo }})
+              </span>
+            } @else {
+              <div class="flex flex-col sm:items-end gap-2">
+                <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold bg-secondary-dark text-muted">
+                  Sin matrícula activa — disponible para renovación
+                </span>
+                <button class="btn text-sm py-2 px-3" type="button" (click)="renovarSiguienteCiclo()">
+                  Renovar siguiente año
+                </button>
+              </div>
+            }
+          </div>
         </div>
-      </div>
 
-      <app-historial-estudiante-tabla [registros]="h.registros" />
+        <app-historial-estudiante-tabla [registros]="h.registros" />
 
-      <button class="btn-link mt-4" type="button" (click)="cerrarHistorial()">Cerrar historial</button>
-    }
+        <button class="btn-link mt-4" type="button" (click)="cerrarHistorial()">Cerrar historial</button>
+      } @else {
+        <p class="text-sm text-muted m-0">Ingrese el nombre o documento del estudiante para ver su historial.</p>
+      }
+    </app-accordion-panel>
   </div>
 </section>
