@@ -3,6 +3,13 @@ export interface CatalogoItem {
   nombre: string;
 }
 
+export interface CatalogoDocenteItem {
+  id: number;
+  tipoDocumento: string;
+  numeroDocumento: string;
+  nombre: string;
+}
+
 export interface CatalogoColegioItem {
   codigoDane: string;
   nombre: string;
@@ -66,13 +73,56 @@ export interface MatriculaResponse {
 }
 
 export interface HistoricoEstudiante {
+  matriculaId: number;
   anio: number;
+  codigoDane: string;
+  gradoId: number;
+  grupoId: number;
   grado: string;
   grupo: string;
   colegio: string;
   docenteDirector: string | null;
   activa: boolean;
+  fechaMatricula: string;
+  fechaAnulacion: string | null;
+  motivoInactivacion: string | null;
+  motivoEtiqueta: string;
+  estado: string;
 }
+
+export interface HistorialEstudianteCompleto {
+  estudianteId: number;
+  nombre: string;
+  tipoDocumento: string;
+  numeroDocumento: string;
+  fechaNacimiento: string;
+  tieneMatriculaActiva: boolean;
+  colegioActivo: string | null;
+  anioActivo: number | null;
+  registros: HistoricoEstudiante[];
+}
+
+export interface InactivarMatriculaRequest {
+  motivo: 'Traslado' | 'FinPeriodo' | 'Retiro';
+}
+
+export const MOTIVOS_INACTIVACION: { id: InactivarMatriculaRequest['motivo']; label: string; descripcion: string }[] = [
+  {
+    id: 'Traslado',
+    label: 'Traslado',
+    descripcion: 'Libera al estudiante para matricularlo en otro colegio.'
+  },
+  {
+    id: 'FinPeriodo',
+    label: 'Fin de periodo',
+    descripcion: 'Cierra el año académico; podrá matricularse en el siguiente año.'
+  },
+  {
+    id: 'Retiro',
+    label: 'Retiro',
+    descripcion: 'El estudiante deja el colegio sin continuidad inmediata.'
+  }
+];
 
 export interface EstudiantesPorEdad {
   entre3y7: number;
@@ -88,7 +138,8 @@ export interface DocentesPorSector {
 }
 
 export interface ContratoPorVencer {
-  docenteId: number;
+  tipoDocumento: string;
+  numeroDocumento: string;
   nombre: string;
   fechaContratacion: string;
   vigenciaContrato: string;
@@ -102,14 +153,30 @@ export interface ColegioMayorMatricula {
   totalEstudiantes: number;
 }
 
+export interface ColegioMatriculaRanking {
+  posicion: number;
+  colegio: string;
+  sector: string;
+  totalEstudiantes: number;
+}
+
+export interface DocenteGrupoAsignado {
+  id: number;
+  nombre: string;
+  gradoNombre: string;
+}
+
 export interface DocenteColegio {
   id: number;
   docenteId: number;
+  tipoDocumento: string;
+  numeroDocumento: string;
   docenteNombre: string;
   codigoDane: string;
   colegioNombre: string;
   sector: string;
   activo: boolean;
+  grupos: DocenteGrupoAsignado[];
 }
 
 export interface AsignarDocenteRequest {

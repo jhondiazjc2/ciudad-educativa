@@ -18,7 +18,7 @@ erDiagram
 ## Reglas de negocio
 
 1. Un estudiante solo puede tener **una matricula activa** a la vez (un solo colegio).
-2. El **historico** se guarda creando nuevas matriculas cada ano (las anteriores quedan inactivas).
+2. El **historico** se conserva con matriculas inactivas; al renovar puede reactivarse un registro previo o crearse uno nuevo.
 3. Un docente puede estar asignado a **varios colegios** simultaneamente (`DocenteColegios`).
 4. La **edad** se calcula a partir de `FechaNacimiento`, no se almacena.
 5. Cada grupo tiene un **docente director** que atiende a los estudiantes del grupo.

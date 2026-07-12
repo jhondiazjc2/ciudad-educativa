@@ -10,6 +10,8 @@ public class Matricula
     public int AnioAcademicoId { get; set; }
     public bool Activa { get; set; }
     public DateTime FechaMatricula { get; set; }
+    public DateTime? FechaAnulacion { get; set; }
+    public string? MotivoInactivacion { get; set; }
 
     public Estudiante Estudiante { get; set; } = null!;
     public Colegio Colegio { get; set; } = null!;

@@ -1,0 +1,103 @@
+<form class="filter-panel mb-8" (ngSubmit)="submitForm.emit()">
+  @if (enEdicion) {
+    <p class="text-sm text-primary-dark font-medium mb-4 m-0">Editando matrícula #{{ editandoMatriculaId }}</p>
+  } @else {
+    <p class="text-sm text-muted mb-4 m-0">
+      Para renovar al siguiente ciclo: busque por documento o abra el historial y use <strong>Renovar siguiente año</strong>.
+      Solo deberá elegir el grupo.
+    </p>
+  }
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+    <label class="label min-w-0">
+      Nombre completo
+      <input class="input" type="text" [ngModel]="nombre" (ngModelChange)="nombreChange.emit($event)" name="nombre" required />
+    </label>
+    <label class="label min-w-0">
+      Tipo de documento
+      <select class="input" [ngModel]="tipoDocumento" (ngModelChange)="tipoDocumentoChange.emit($event)" name="tipoDocumento" [disabled]="enEdicion">
+        @for (t of tiposDocumento; track t.codigo) {
+          <option [value]="t.codigo">{{ t.codigo }} — {{ t.nombre }}</option>
+        }
+      </select>
+    </label>
+    <label class="label min-w-0">
+      Número de documento
+      <div class="flex gap-2">
+        <input
+          class="input flex-1 min-w-0"
+          type="text"
+          [ngModel]="numeroDocumento"
+          (ngModelChange)="numeroDocumentoChange.emit($event)"
+          name="numeroDocumento"
+          [readonly]="enEdicion"
+          required
+          (keydown.enter)="buscarEstudiante.emit(); $event.preventDefault()"
+        />
+        @if (!enEdicion) {
+          <button
+            class="btn-secondary shrink-0 whitespace-nowrap"
+            type="button"
+            (click)="buscarEstudiante.emit()"
+            [disabled]="buscandoEstudiante"
+          >
+            {{ buscandoEstudiante ? 'Buscando...' : 'Buscar' }}
+          </button>
+        }
+      </div>
+    </label>
+    <label class="label min-w-0">
+      Fecha de nacimiento
+      <input class="input" type="date" [ngModel]="fechaNacimiento" (ngModelChange)="fechaNacimientoChange.emit($event)" name="fechaNacimiento" required />
+    </label>
+    <label class="label min-w-0">
+      Colegio
+      <app-select-field
+        [ngModel]="codigoDane"
+        (ngModelChange)="codigoDaneChange.emit($event); colegioChange.emit()"
+        name="codigoDane"
+        [options]="colegioOptions"
+        [disabled]="colegioBloqueado || enEdicion"
+      />
+    </label>
+    <label class="label min-w-0">
+      Grado
+      <app-select-field
+        [ngModel]="gradoId"
+        (ngModelChange)="gradoIdChange.emit($event); gradoChange.emit()"
+        name="gradoId"
+        [options]="gradoOptions"
+      />
+    </label>
+    <label class="label min-w-0">
+      Grupo
+      <app-select-field
+        [ngModel]="grupoId"
+        (ngModelChange)="grupoIdChange.emit($event)"
+        name="grupoId"
+        [options]="grupoOptions"
+      />
+    </label>
+    <label class="label min-w-0">
+      Año académico
+      <input
+        class="input"
+        type="number"
+        [ngModel]="anio"
+        (ngModelChange)="anioChange.emit($event)"
+        name="anio"
+        [min]="anioMin"
+        [max]="anioMax"
+        step="1"
+        required
+      />
+    </label>
+  </div>
+  <div class="flex flex-wrap gap-2">
+    <button class="btn" type="submit" [disabled]="enviando">
+      {{ enviando ? 'Guardando...' : (enEdicion ? 'Actualizar matrícula' : 'Matricular estudiante') }}
+    </button>
+    @if (enEdicion) {
+      <button class="btn-secondary" type="button" (click)="cancelar.emit()">Cancelar</button>
+    }
+  </div>
+</form>

@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-login',
@@ -9,6 +10,7 @@ import { AuthService } from '../../services/auth.service';
   templateUrl: './login.html'
 })
 export class Login {
+  protected readonly showDemoCredentials = environment.showDemoCredentials;
   email = '';
   password = '';
   error = '';

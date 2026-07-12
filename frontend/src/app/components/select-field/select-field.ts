@@ -4,7 +4,8 @@ import {
   forwardRef,
   HostListener,
   Input,
-  signal
+  signal,
+  ViewChild
 } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
@@ -17,6 +18,13 @@ export interface SelectOption {
 
 export function toSelectOptions(items: { id: number; nombre: string }[]): SelectOption[] {
   return items.map((item) => ({ id: item.id, label: item.nombre }));
+}
+
+export function toDocenteSelectOptions(items: { id: number; tipoDocumento: string; numeroDocumento: string; nombre: string }[]): SelectOption[] {
+  return items.map((item) => ({
+    id: item.id,
+    label: `${item.nombre} (${item.tipoDocumento} ${item.numeroDocumento})`
+  }));
 }
 
 export function toColegioSelectOptions(items: { codigoDane: string; nombre: string }[]): SelectOption[] {
@@ -37,9 +45,14 @@ export function toColegioSelectOptions(items: { codigoDane: string; nombre: stri
 export class SelectField implements ControlValueAccessor {
   @Input() options: SelectOption[] = [];
   @Input() placeholder = 'Seleccionar...';
+  @Input() searchPlaceholder = 'Buscar...';
+  @Input() searchable = false;
   @Input() disabled = false;
 
+  @ViewChild('searchInput') searchInput?: ElementRef<HTMLInputElement>;
+
   readonly open = signal(false);
+  readonly filterQuery = signal('');
   value: SelectValue = '';
 
   private onChange: (value: SelectValue) => void = () => {};
@@ -50,6 +63,32 @@ export class SelectField implements ControlValueAccessor {
   get selectedLabel(): string {
     if (this.isEmpty(this.value)) return this.placeholder;
     return this.options.find((o) => o.id === this.value)?.label ?? this.placeholder;
+  }
+
+  get filteredOptions(): SelectOption[] {
+    const query = this.normalize(this.filterQuery());
+    if (!query) return this.options;
+    return this.options.filter((option) => this.normalize(option.label).includes(query));
+  }
+
+  onFilterInput(event: Event): void {
+    this.filterQuery.set((event.target as HTMLInputElement).value);
+  }
+
+  private normalize(text: string): string {
+    return text
+      .trim()
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/\p{Diacritic}/gu, '');
+  }
+
+  private resetFilter(): void {
+    this.filterQuery.set('');
+  }
+
+  private focusSearchInput(): void {
+    setTimeout(() => this.searchInput?.nativeElement.focus(), 0);
   }
 
   writeValue(value: SelectValue | null): void {
@@ -72,7 +111,14 @@ export class SelectField implements ControlValueAccessor {
   toggle(event: MouseEvent): void {
     event.stopPropagation();
     if (this.disabled) return;
-    this.open.update((v) => !v);
+    const willOpen = !this.open();
+    this.open.set(willOpen);
+    if (!willOpen) {
+      this.resetFilter();
+    } else if (this.searchable) {
+      this.resetFilter();
+      this.focusSearchInput();
+    }
     this.onTouched();
   }
 
@@ -81,6 +127,7 @@ export class SelectField implements ControlValueAccessor {
     this.onChange(id);
     this.onTouched();
     this.open.set(false);
+    this.resetFilter();
   }
 
   private isEmpty(value: SelectValue): boolean {
@@ -91,11 +138,13 @@ export class SelectField implements ControlValueAccessor {
   closeOnOutsideClick(event: Event): void {
     if (!this.host.nativeElement.contains(event.target as Node)) {
       this.open.set(false);
+      this.resetFilter();
     }
   }
 
   @HostListener('document:keydown.escape')
   closeOnEscape(): void {
     this.open.set(false);
+    this.resetFilter();
   }
 }

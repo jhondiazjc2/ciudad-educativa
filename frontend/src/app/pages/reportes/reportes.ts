@@ -2,12 +2,12 @@ import { Component, computed, OnInit, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { ApiService } from '../../services/api.service';
 import { AuthService } from '../../services/auth.service';
-import { ColegioMayorMatricula, ContratoPorVencer, DocentesPorSector, EstudiantesPorEdad } from '../../models';
+import { ColegioMatriculaRanking, DocentesPorSector, EstudiantesPorEdad } from '../../models';
 import { formatearSector } from '../../utils/texto';
 import { ReportBarChart, ReportBarItem } from '../../components/report-bar-chart/report-bar-chart';
 import { ReportDonutChart, ReportDonutItem } from '../../components/report-donut-chart/report-donut-chart';
 
-type FiltroContrato = 'todos' | 'urgente' | 'proximo';
+type LimiteRanking = 3 | 5;
 
 @Component({
   selector: 'app-reportes',
@@ -19,15 +19,13 @@ export class Reportes implements OnInit {
 
   readonly edades = signal<EstudiantesPorEdad | null>(null);
   readonly docentes = signal<DocentesPorSector | null>(null);
-  readonly colegioTop = signal<ColegioMayorMatricula | null>(null);
-  readonly contratosPorVencer = signal<ContratoPorVencer[]>([]);
+  readonly colegiosRanking = signal<ColegioMatriculaRanking[]>([]);
+  readonly limiteRanking = signal<LimiteRanking>(5);
   readonly error = signal('');
   readonly cargando = signal(true);
   readonly ultimaActualizacion = signal<Date | null>(null);
   readonly edadSeleccionada = signal<string | null>(null);
   readonly sectorSeleccionado = signal<string | null>(null);
-  readonly contratoExpandido = signal<number | null>(null);
-  readonly filtroContrato = signal<FiltroContrato>('todos');
 
   readonly edadesChart = computed<ReportBarItem[]>(() => {
     const data = this.edades();
@@ -78,26 +76,11 @@ export class Reportes implements OnInit {
     };
   });
 
-  readonly participacionColegio = computed(() => {
-    const top = this.colegioTop();
-    const total = this.edades()?.total ?? 0;
-    if (!top || total <= 0) return 0;
-    return Math.round((top.totalEstudiantes / total) * 100);
-  });
+  readonly colegioTop = computed(() => this.colegiosRanking()[0] ?? null);
 
-  readonly contratosFiltrados = computed(() => {
-    const filtro = this.filtroContrato();
-    const lista = this.contratosPorVencer();
-
-    if (filtro === 'urgente') return lista.filter((c) => c.diasRestantes <= 7);
-    if (filtro === 'proximo') return lista.filter((c) => c.diasRestantes <= 14);
-    return lista;
-  });
-
-  readonly resumenContratos = computed(() => ({
-    total: this.contratosPorVencer().length,
-    urgentes: this.contratosPorVencer().filter((c) => c.diasRestantes <= 7).length
-  }));
+  readonly maxEstudiantesRanking = computed(() =>
+    Math.max(...this.colegiosRanking().map((c) => c.totalEstudiantes), 0)
+  );
 
   constructor(private api: ApiService, protected auth: AuthService) {}
 
@@ -110,12 +93,11 @@ export class Reportes implements OnInit {
     this.cargando.set(true);
     this.edades.set(null);
     this.docentes.set(null);
-    this.colegioTop.set(null);
+    this.colegiosRanking.set([]);
     this.edadSeleccionada.set(null);
     this.sectorSeleccionado.set(null);
-    this.contratoExpandido.set(null);
 
-    let pendientes = this.auth.isAdmin() ? 4 : 3;
+    let pendientes = this.auth.isAdmin() ? 3 : 2;
 
     const finalizar = () => {
       pendientes -= 1;
@@ -139,17 +121,25 @@ export class Reportes implements OnInit {
       });
     }
 
-    this.api.getColegioMayorMatricula().subscribe({
-      next: (data) => this.colegioTop.set(data),
-      error: () => this.colegioTop.set(null),
-      complete: finalizar
-    });
+    this.cargarRanking(finalizar);
+  }
 
-    this.api.getContratosPorVencer().subscribe({
-      next: (data) => this.contratosPorVencer.set(data),
-      error: () => this.contratosPorVencer.set([]),
-      complete: finalizar
-    });
+  cambiarLimiteRanking(limite: LimiteRanking): void {
+    if (this.limiteRanking() === limite) return;
+    this.limiteRanking.set(limite);
+    this.cargarRanking();
+  }
+
+  participacionRanking(totalEstudiantes: number): number {
+    const total = this.edades()?.total ?? 0;
+    if (total <= 0) return 0;
+    return Math.round((totalEstudiantes / total) * 100);
+  }
+
+  barraRanking(totalEstudiantes: number): number {
+    const max = this.maxEstudiantesRanking();
+    if (max <= 0) return 0;
+    return Math.round((totalEstudiantes / max) * 100);
   }
 
   alternarEdad(id: string): void {
@@ -160,18 +150,11 @@ export class Reportes implements OnInit {
     this.sectorSeleccionado.update((actual) => (actual === id ? null : id));
   }
 
-  alternarContrato(docenteId: number): void {
-    this.contratoExpandido.update((actual) => (actual === docenteId ? null : docenteId));
-  }
-
-  filtrarContratos(filtro: FiltroContrato): void {
-    this.filtroContrato.set(filtro);
-    this.contratoExpandido.set(null);
-  }
-
-  urgenciaContrato(dias: number): 'alta' | 'media' | 'baja' {
-    if (dias <= 7) return 'alta';
-    if (dias <= 14) return 'media';
-    return 'baja';
+  private cargarRanking(onComplete?: () => void): void {
+    this.api.getColegiosRankingMatricula(this.limiteRanking()).subscribe({
+      next: (data) => this.colegiosRanking.set(data),
+      error: () => this.colegiosRanking.set([]),
+      complete: () => onComplete?.()
+    });
   }
 }

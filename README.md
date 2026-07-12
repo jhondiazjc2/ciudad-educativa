@@ -84,8 +84,7 @@ App disponible en: http://localhost:4200
 | Pantalla | Descripcion |
 |---|---|
 | Reportes | Estudiantes por edad, docentes por sector, colegio con mas estudiantes |
-| Matricular | Crear estudiante en colegio, grado, grupo y ano |
-| Consultar | Filtrar estudiantes + ver historico academico |
+| Matricular / Estudiantes | Matricular, renovar, consultar historial e inactivar matrículas (ruta `/matricular`; `/consultar` redirige aquí) |
 | Docentes | Asignar docente a multiples colegios |
 
 ## Entregables

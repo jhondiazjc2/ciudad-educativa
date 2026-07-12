@@ -24,7 +24,7 @@ export class Inicio {
         ruta: '/reportes',
         titulo: 'Reportes',
         descripcion: admin
-          ? 'Consultas analíticas de estudiantes, docentes y contratos en toda la ciudad.'
+          ? 'Consultas analíticas de estudiantes y docentes en toda la ciudad.'
           : `Indicadores y estadísticas de ${colegio ?? 'tu colegio'}.`,
         icon: 'reportes'
       },

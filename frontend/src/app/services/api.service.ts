@@ -4,11 +4,12 @@ import {
   ActualizarColegioRequest,
   AsignarDocenteRequest,
   CatalogoColegioItem,
+  CatalogoDocenteItem,
   CatalogoItem,
   CatalogoDocumentoItem,
   ColegioItem,
   ColegioMayorMatricula,
-  ContratoPorVencer,
+  ColegioMatriculaRanking,
   CrearMatriculaRequest,
   DocenteColegio,
   DocentesPorSector,
@@ -18,10 +19,13 @@ import {
   GrupoItem,
   GuardarColegioRequest,
   HistoricoEstudiante,
+  HistorialEstudianteCompleto,
+  InactivarMatriculaRequest,
   MatriculaResponse
 } from '../models';
+import { environment } from '../../environments/environment';
 
-const API = 'http://localhost:5000/api';
+const API = environment.apiUrl;
 
 @Injectable({ providedIn: 'root' })
 export class ApiService {
@@ -50,7 +54,7 @@ export class ApiService {
   }
 
   getDocentes() {
-    return this.http.get<CatalogoItem[]>(`${API}/catalogos/docentes`);
+    return this.http.get<CatalogoDocenteItem[]>(`${API}/catalogos/docentes`);
   }
 
   crearMatricula(data: CrearMatriculaRequest) {
@@ -74,6 +78,10 @@ export class ApiService {
     return this.http.delete<void>(`${API}/matriculas/${id}`);
   }
 
+  inactivarMatricula(id: number, data: InactivarMatriculaRequest) {
+    return this.http.post<void>(`${API}/matriculas/${id}/inactivar`, data);
+  }
+
   consultarMatriculas(codigoDane: string, gradoId: number, anio: number) {
     const params = new HttpParams()
       .set('codigoDane', codigoDane)
@@ -84,6 +92,18 @@ export class ApiService {
 
   getHistorico(estudianteId: number) {
     return this.http.get<HistoricoEstudiante[]>(`${API}/estudiantes/${estudianteId}/historico`);
+  }
+
+  getHistorialPorDocumento(tipoDocumento: string, numeroDocumento: string) {
+    const params = new HttpParams()
+      .set('tipoDocumento', tipoDocumento)
+      .set('numeroDocumento', numeroDocumento.replace(/\D/g, ''));
+    return this.http.get<HistorialEstudianteCompleto>(`${API}/estudiantes/historico`, { params });
+  }
+
+  getHistorialPorBusqueda(busqueda: string) {
+    const params = new HttpParams().set('busqueda', busqueda.trim());
+    return this.http.get<HistorialEstudianteCompleto>(`${API}/estudiantes/historico`, { params });
   }
 
   getEstudiantesPorEdad() {
@@ -98,9 +118,9 @@ export class ApiService {
     return this.http.get<ColegioMayorMatricula>(`${API}/consultas/colegio-mayor-matricula`);
   }
 
-  getContratosPorVencer(dias = 30) {
-    return this.http.get<ContratoPorVencer[]>(`${API}/consultas/contratos-por-vencer`, {
-      params: new HttpParams().set('dias', dias)
+  getColegiosRankingMatricula(top = 5) {
+    return this.http.get<ColegioMatriculaRanking[]>(`${API}/consultas/colegios-ranking-matricula`, {
+      params: new HttpParams().set('top', top)
     });
   }
 

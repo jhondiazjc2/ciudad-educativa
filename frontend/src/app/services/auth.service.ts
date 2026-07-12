@@ -2,6 +2,7 @@ import { Injectable, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { tap } from 'rxjs/operators';
+import { environment } from '../../environments/environment';
 
 export interface LoginResponse {
   token: string;
@@ -22,7 +23,7 @@ export interface AuthUser {
   expiraEn: string;
 }
 
-const API = 'http://localhost:5000/api/auth';
+const API = `${environment.apiUrl}/auth`;
 const TOKEN_KEY = 'ce_token';
 const USER_KEY = 'ce_user';
 

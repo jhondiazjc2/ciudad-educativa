@@ -47,13 +47,36 @@ public record MatriculaResponse(
     string? DocenteDirector
 );
 
+public record InactivarMatriculaRequest(string Motivo);
+
 public record HistoricoEstudianteResponse(
+    int MatriculaId,
     int Anio,
+    string CodigoDane,
+    int GradoId,
+    int GrupoId,
     string Grado,
     string Grupo,
     string Colegio,
     string? DocenteDirector,
-    bool Activa
+    bool Activa,
+    DateTime FechaMatricula,
+    DateTime? FechaAnulacion,
+    string? MotivoInactivacion,
+    string MotivoEtiqueta,
+    string Estado
+);
+
+public record HistorialEstudianteCompletoResponse(
+    int EstudianteId,
+    string Nombre,
+    string TipoDocumento,
+    string NumeroDocumento,
+    DateTime FechaNacimiento,
+    bool TieneMatriculaActiva,
+    string? ColegioActivo,
+    int? AnioActivo,
+    List<HistoricoEstudianteResponse> Registros
 );
 
 public record EstudiantesPorEdadResponse(
@@ -71,6 +94,8 @@ public record DocentesPorSectorResponse(
 
 public record ContratoPorVencerResponse(
     int DocenteId,
+    string TipoDocumento,
+    string NumeroDocumento,
     string Nombre,
     DateTime FechaContratacion,
     DateTime VigenciaContrato,
@@ -84,19 +109,41 @@ public record ColegioMayorMatriculaResponse(
     int TotalEstudiantes
 );
 
+public record ColegioMatriculaRankingResponse(
+    int Posicion,
+    string Colegio,
+    string Sector,
+    int TotalEstudiantes
+);
+
 public record AsignarDocenteRequest(int DocenteId, string CodigoDane);
+
+public record DocenteGrupoAsignadoResponse(
+    int Id,
+    string Nombre,
+    string GradoNombre
+);
 
 public record DocenteColegioResponse(
     int Id,
     int DocenteId,
+    string TipoDocumento,
+    string NumeroDocumento,
     string DocenteNombre,
     string CodigoDane,
     string ColegioNombre,
     string Sector,
-    bool Activo
+    bool Activo,
+    List<DocenteGrupoAsignadoResponse> Grupos
 );
 
 public record CatalogoItem(int Id, string Nombre);
+public record CatalogoDocenteItem(
+    int Id,
+    string TipoDocumento,
+    string NumeroDocumento,
+    string Nombre
+);
 public record CatalogoColegioItem(string CodigoDane, string Nombre);
 public record CatalogoDocumentoItem(string Codigo, string Nombre);
 public record GrupoItem(int Id, string Nombre, int GradoId, string? DocenteDirector);

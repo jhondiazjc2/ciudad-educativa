@@ -1,6 +1,7 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
+import { extraerMensajeApi } from '../../utils/api-error';
 import { finalize } from 'rxjs';
 import { ApiService } from '../../services/api.service';
 import { ColegioItem } from '../../models';
@@ -74,7 +75,7 @@ export class Colegios implements OnInit {
         this.cargar();
       },
       error: (err: HttpErrorResponse) => {
-        this.error.set(this.extraerMensajeApi(err) ?? 'Error al guardar el colegio.');
+        this.error.set(extraerMensajeApi(err) ?? 'Error al guardar el colegio.');
       }
     });
   }
@@ -106,7 +107,7 @@ export class Colegios implements OnInit {
         this.cargar();
       },
       error: (err: HttpErrorResponse) => {
-        this.error.set(this.extraerMensajeApi(err) ?? 'No se pudo eliminar el colegio.');
+        this.error.set(extraerMensajeApi(err) ?? 'No se pudo eliminar el colegio.');
       }
     });
   }
@@ -116,16 +117,5 @@ export class Colegios implements OnInit {
     this.codigoDane = '';
     this.nombre = '';
     this.sector = 'Publico';
-  }
-
-  private extraerMensajeApi(err: HttpErrorResponse): string | null {
-    const body = err.error;
-    if (body && typeof body === 'object' && 'message' in body && body.message) {
-      return String(body.message);
-    }
-    if (typeof body === 'string' && body.trim()) {
-      return body;
-    }
-    return null;
   }
 }

@@ -25,7 +25,8 @@ IF OBJECT_ID('Colegios', 'U') IS NOT NULL DROP TABLE Colegios;
 GO
 
 CREATE TABLE Colegios (
-    CodigoDane NVARCHAR(12) NOT NULL PRIMARY KEY,
+    Id INT IDENTITY(1,1) PRIMARY KEY,
+    CodigoDane NVARCHAR(12) NOT NULL UNIQUE,
     Nombre NVARCHAR(150) NOT NULL,
     Sector NVARCHAR(20) NOT NULL CHECK (Sector IN ('Publico', 'Privado'))
 );
@@ -54,11 +55,15 @@ CREATE TABLE Grados (
 
 CREATE TABLE Docentes (
     Id INT IDENTITY(1,1) PRIMARY KEY,
+    TipoDocumento NVARCHAR(5) NOT NULL,
+    NumeroDocumento NVARCHAR(20) NOT NULL,
     Nombre NVARCHAR(150) NOT NULL,
     FechaContratacion DATE NOT NULL,
     PeriodoContrato NVARCHAR(50) NOT NULL,
     VigenciaContrato DATE NULL,
     Activo BIT NOT NULL DEFAULT 1,
+    CONSTRAINT UQ_Docentes_Documento UNIQUE (TipoDocumento, NumeroDocumento),
+    CONSTRAINT CK_Docentes_TipoDocumento CHECK (TipoDocumento IN ('RC', 'TI', 'CC', 'CE', 'PA')),
     CONSTRAINT CK_Docentes_Vigencia CHECK (VigenciaContrato IS NULL OR VigenciaContrato >= FechaContratacion)
 );
 
@@ -97,6 +102,8 @@ CREATE TABLE Matriculas (
     AnioAcademicoId INT NOT NULL,
     Activa BIT NOT NULL DEFAULT 1,
     FechaMatricula DATE NOT NULL DEFAULT GETDATE(),
+    FechaAnulacion DATE NULL,
+    MotivoInactivacion NVARCHAR(30) NULL,
     CONSTRAINT FK_Matriculas_Estudiantes FOREIGN KEY (EstudianteId) REFERENCES Estudiantes(Id),
     CONSTRAINT FK_Matriculas_Colegios FOREIGN KEY (CodigoDane) REFERENCES Colegios(CodigoDane),
     CONSTRAINT FK_Matriculas_Grados FOREIGN KEY (GradoId) REFERENCES Grados(Id),
@@ -117,6 +124,7 @@ CREATE TABLE DocenteColegios (
 
 CREATE INDEX IX_Matriculas_Consulta ON Matriculas(CodigoDane, GradoId, AnioAcademicoId);
 CREATE INDEX IX_Matriculas_EstudianteActiva ON Matriculas(EstudianteId, Activa);
+CREATE UNIQUE INDEX UX_Matriculas_EstudianteActiva ON Matriculas(EstudianteId) WHERE Activa = 1;
 
 INSERT INTO Colegios (CodigoDane, Nombre, Sector) VALUES
 (N'105001000001', N'Colegio San José', 'Privado'),
@@ -142,25 +150,29 @@ INSERT INTO Grados (Nombre, Orden) VALUES
 
 INSERT INTO AniosAcademicos (Anio) VALUES (2024), (2025), (2026);
 
-INSERT INTO Docentes (Nombre, FechaContratacion, PeriodoContrato, VigenciaContrato, Activo) VALUES
-(N'María González', '2020-02-01', 'Indefinido', NULL, 1),
-(N'Carlos Ruiz', '2019-08-15', 'Indefinido', NULL, 1),
-(N'Ana Martínez', '2021-01-10', 'Anual', '2026-07-25', 1),
-(N'Pedro Lopez', '2018-03-20', 'Indefinido', NULL, 1),
-(N'Laura Torres', '2022-07-01', 'Anual', '2026-12-31', 1),
-(N'Jorge Herrera', '2017-01-05', 'Indefinido', NULL, 1);
+INSERT INTO Docentes (TipoDocumento, NumeroDocumento, Nombre, FechaContratacion, PeriodoContrato, VigenciaContrato, Activo) VALUES
+(N'CC', N'52890123', N'María González', '2020-02-01', 'Indefinido', NULL, 1),
+(N'CC', N'80123456', N'Carlos Ruiz', '2019-08-15', 'Indefinido', NULL, 1),
+(N'CC', N'52987654', N'Ana Martínez', '2021-01-10', 'Anual', '2026-07-25', 1),
+(N'CC', N'79456123', N'Pedro Lopez', '2018-03-20', 'Indefinido', NULL, 1),
+(N'CC', N'1034567890', N'Laura Torres', '2022-07-01', 'Anual', '2026-12-31', 1),
+(N'CC', N'80765432', N'Jorge Herrera', '2017-01-05', 'Indefinido', NULL, 1);
 
-INSERT INTO DocenteColegios (DocenteId, CodigoDane, FechaAsignacion, Activo) VALUES
-(1, N'105001000001', '2020-02-01', 1),
-(1, N'105001000003', '2021-01-01', 1),
-(2, N'105001000002', '2019-08-15', 1),
-(2, N'105001000004', '2020-01-01', 1),
-(3, N'105001000001', '2021-01-10', 1),
-(4, N'105001000005', '2018-03-20', 1),
-(4, N'105001000006', '2019-01-01', 1),
-(5, N'105001000003', '2022-07-01', 1),
-(6, N'105001000002', '2017-01-05', 1),
-(6, N'105001000004', '2018-01-01', 1);
+INSERT INTO DocenteColegios (DocenteId, CodigoDane, FechaAsignacion, Activo)
+SELECT d.Id, v.CodigoDane, v.FechaAsignacion, v.Activo
+FROM (VALUES
+    (N'CC', N'52890123', N'105001000001', '2020-02-01', 1),
+    (N'CC', N'52890123', N'105001000003', '2021-01-01', 1),
+    (N'CC', N'80123456', N'105001000002', '2019-08-15', 1),
+    (N'CC', N'80123456', N'105001000004', '2020-01-01', 1),
+    (N'CC', N'52987654', N'105001000001', '2021-01-10', 1),
+    (N'CC', N'79456123', N'105001000005', '2018-03-20', 1),
+    (N'CC', N'79456123', N'105001000006', '2019-01-01', 1),
+    (N'CC', N'1034567890', N'105001000003', '2022-07-01', 1),
+    (N'CC', N'80765432', N'105001000002', '2017-01-05', 1),
+    (N'CC', N'80765432', N'105001000004', '2018-01-01', 1)
+) v(TipoDocumento, NumeroDocumento, CodigoDane, FechaAsignacion, Activo)
+INNER JOIN Docentes d ON d.TipoDocumento = v.TipoDocumento AND d.NumeroDocumento = v.NumeroDocumento;
 
 -- 5 grupos por grado y por colegio; director rotado entre docentes del colegio
 ;WITH Numeros AS (

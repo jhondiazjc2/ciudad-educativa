@@ -20,10 +20,11 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         modelBuilder.Entity<Colegio>(e =>
         {
             e.ToTable("Colegios");
-            e.HasKey(x => x.CodigoDane);
+            e.HasKey(x => x.Id);
             e.Property(x => x.CodigoDane).HasMaxLength(12);
             e.Property(x => x.Nombre).HasMaxLength(150);
             e.Property(x => x.Sector).HasMaxLength(20);
+            e.HasIndex(x => x.CodigoDane).IsUnique();
         });
 
         modelBuilder.Entity<Grado>(e =>
@@ -38,9 +39,13 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             e.Property(x => x.CodigoDane).HasMaxLength(12);
             e.Property(x => x.Nombre).HasMaxLength(10);
             e.HasIndex(x => new { x.CodigoDane, x.GradoId, x.Nombre }).IsUnique();
-            e.HasOne(x => x.Colegio).WithMany(x => x.Grupos).HasForeignKey(x => x.CodigoDane);
+            e.HasOne(x => x.Colegio).WithMany(x => x.Grupos)
+                .HasForeignKey(x => x.CodigoDane)
+                .HasPrincipalKey(c => c.CodigoDane);
             e.HasOne(x => x.Grado).WithMany(x => x.Grupos).HasForeignKey(x => x.GradoId);
-            e.HasOne(x => x.DocenteDirector).WithMany(x => x.GruposDirigidos).HasForeignKey(x => x.DocenteDirectorId);
+            e.HasOne(x => x.DocenteDirector).WithMany(x => x.GruposDirigidos)
+                .HasForeignKey(x => x.DocenteDirectorId)
+                .IsRequired(false);
         });
 
         modelBuilder.Entity<AnioAcademico>(e =>
@@ -53,6 +58,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         modelBuilder.Entity<Estudiante>(e =>
         {
             e.ToTable("Estudiantes");
+            e.HasKey(x => x.Id);
             e.Property(x => x.Nombre).HasMaxLength(150);
             e.Property(x => x.TipoDocumento).HasMaxLength(5);
             e.Property(x => x.NumeroDocumento).HasMaxLength(20);
@@ -62,15 +68,21 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         modelBuilder.Entity<Docente>(e =>
         {
             e.ToTable("Docentes");
+            e.HasKey(x => x.Id);
+            e.Property(x => x.TipoDocumento).HasMaxLength(5);
+            e.Property(x => x.NumeroDocumento).HasMaxLength(20);
             e.Property(x => x.Nombre).HasMaxLength(150);
             e.Property(x => x.PeriodoContrato).HasMaxLength(50);
+            e.HasIndex(x => new { x.TipoDocumento, x.NumeroDocumento }).IsUnique();
         });
 
         modelBuilder.Entity<Matricula>(e =>
         {
             e.ToTable("Matriculas");
             e.HasOne(x => x.Estudiante).WithMany(x => x.Matriculas).HasForeignKey(x => x.EstudianteId);
-            e.HasOne(x => x.Colegio).WithMany(x => x.Matriculas).HasForeignKey(x => x.CodigoDane);
+            e.HasOne(x => x.Colegio).WithMany(x => x.Matriculas)
+                .HasForeignKey(x => x.CodigoDane)
+                .HasPrincipalKey(c => c.CodigoDane);
             e.HasOne(x => x.Grado).WithMany(x => x.Matriculas).HasForeignKey(x => x.GradoId);
             e.HasOne(x => x.Grupo).WithMany(x => x.Matriculas).HasForeignKey(x => x.GrupoId);
             e.HasOne(x => x.AnioAcademico).WithMany(x => x.Matriculas).HasForeignKey(x => x.AnioAcademicoId);
@@ -82,7 +94,9 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             e.ToTable("DocenteColegios");
             e.HasIndex(x => new { x.DocenteId, x.CodigoDane }).IsUnique();
             e.HasOne(x => x.Docente).WithMany(x => x.DocenteColegios).HasForeignKey(x => x.DocenteId);
-            e.HasOne(x => x.Colegio).WithMany(x => x.DocenteColegios).HasForeignKey(x => x.CodigoDane);
+            e.HasOne(x => x.Colegio).WithMany(x => x.DocenteColegios)
+                .HasForeignKey(x => x.CodigoDane)
+                .HasPrincipalKey(c => c.CodigoDane);
         });
 
         modelBuilder.Entity<Usuario>(e =>
@@ -94,7 +108,9 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             e.Property(x => x.Rol).HasMaxLength(20);
             e.Property(x => x.CodigoDane).HasMaxLength(12);
             e.HasIndex(x => x.Email).IsUnique();
-            e.HasOne(x => x.Colegio).WithMany().HasForeignKey(x => x.CodigoDane);
+            e.HasOne(x => x.Colegio).WithMany()
+                .HasForeignKey(x => x.CodigoDane)
+                .HasPrincipalKey(c => c.CodigoDane);
         });
     }
 }

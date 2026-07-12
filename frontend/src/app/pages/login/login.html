@@ -35,10 +35,12 @@
       </form>
     </div>
 
-    <div class="bg-primary-light/80 px-8 py-4 border-t border-border text-sm text-muted">
-      <p class="font-semibold text-primary-dark m-0 mb-1">Usuarios de prueba:</p>
-      <p class="m-0">admin@ciudad.edu / Admin123!</p>
-      <p class="m-0">colegio@ciudad.edu / Colegio123! (Colegio San José)</p>
-    </div>
+    @if (showDemoCredentials) {
+      <div class="bg-primary-light/80 px-8 py-4 border-t border-border text-sm text-muted">
+        <p class="font-semibold text-primary-dark m-0 mb-1">Usuarios de prueba:</p>
+        <p class="m-0">admin@ciudad.edu / Admin123!</p>
+        <p class="m-0">colegio@ciudad.edu / Colegio123! (Colegio San José)</p>
+      </div>
+    }
   </div>
 </section>

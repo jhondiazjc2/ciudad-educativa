@@ -15,17 +15,36 @@
 
   @if (open() && !disabled) {
     <ul class="select-menu" role="listbox">
+      @if (searchable) {
+        <li class="select-search-wrap">
+          <input
+            #searchInput
+            type="search"
+            class="select-search"
+            [value]="filterQuery()"
+            [placeholder]="searchPlaceholder"
+            (input)="onFilterInput($event)"
+            (click)="$event.stopPropagation()"
+            (keydown)="$event.stopPropagation()"
+            aria-label="Buscar opciones"
+          />
+        </li>
+      }
       <li>
         <button type="button" class="select-option" [class.selected]="!value" (click)="choose(0)">
           {{ placeholder }}
         </button>
       </li>
-      @for (opt of options; track opt.id) {
+      @for (opt of filteredOptions; track opt.id) {
         <li>
           <button type="button" class="select-option" [class.selected]="value === opt.id" (click)="choose(opt.id)">
             {{ opt.label }}
           </button>
         </li>
+      } @empty {
+        @if (filterQuery()) {
+          <li class="select-empty px-3 py-2.5 text-sm text-muted">Sin coincidencias</li>
+        }
       }
     </ul>
   }

@@ -1,0 +1,45 @@
+<div class="overflow-x-auto">
+  <table class="w-full border-collapse bg-white border border-border rounded-xl overflow-hidden">
+    <thead>
+      <tr class="bg-secondary text-primary-dark text-xs uppercase tracking-wide">
+        <th class="text-left" [class]="compact ? 'px-3 py-2' : 'px-4 py-3'">Año</th>
+        <th class="text-left" [class]="compact ? 'px-3 py-2' : 'px-4 py-3'">Colegio</th>
+        <th class="text-left" [class]="compact ? 'px-3 py-2' : 'px-4 py-3'">Grado</th>
+        <th class="text-left" [class]="compact ? 'px-3 py-2' : 'px-4 py-3'">Grupo</th>
+        <th class="text-left" [class]="compact ? 'px-3 py-2' : 'px-4 py-3'">Docente director</th>
+        <th class="text-left" [class]="compact ? 'px-3 py-2' : 'px-4 py-3'">Estado</th>
+        <th class="text-left" [class]="compact ? 'px-3 py-2' : 'px-4 py-3'">Motivo salida</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (r of registros; track r.matriculaId) {
+        <tr class="border-t border-border" [class.bg-primary-light/20]="r.activa">
+          <td [class]="compact ? 'px-3 py-2' : 'px-4 py-3'">{{ r.anio }}</td>
+          <td [class]="compact ? 'px-3 py-2' : 'px-4 py-3'">{{ r.colegio }}</td>
+          <td [class]="compact ? 'px-3 py-2' : 'px-4 py-3'">{{ r.grado }}</td>
+          <td [class]="compact ? 'px-3 py-2' : 'px-4 py-3'">{{ r.grupo }}</td>
+          <td [class]="compact ? 'px-3 py-2' : 'px-4 py-3'">{{ r.docenteDirector ?? '—' }}</td>
+          <td [class]="compact ? 'px-3 py-2' : 'px-4 py-3'">
+            <span
+              class="inline-flex px-2 py-0.5 rounded-full text-xs font-semibold"
+              [class.bg-primary-light]="r.activa"
+              [class.text-accent]="r.activa"
+              [class.bg-secondary-dark]="!r.activa"
+              [class.text-muted]="!r.activa"
+            >{{ r.estado }}</span>
+          </td>
+          <td class="text-sm text-muted" [class]="compact ? 'px-3 py-2' : 'px-4 py-3'">
+            @if (r.activa) {
+              Matriculado {{ r.fechaMatricula | date:'dd/MM/yyyy' }}
+            } @else {
+              {{ r.motivoEtiqueta }}
+              @if (r.fechaAnulacion) {
+                · {{ r.fechaAnulacion | date:'dd/MM/yyyy' }}
+              }
+            }
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>

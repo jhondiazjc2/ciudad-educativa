@@ -69,6 +69,15 @@
     @apply absolute z-50 mt-1 w-full max-h-60 overflow-y-auto bg-white border border-border rounded-lg shadow-lg py-1 list-none m-0 p-0;
   }
 
+  .select-search-wrap {
+    @apply sticky top-0 z-10 bg-white border-b border-border px-2 py-2 list-none;
+  }
+
+  .select-search {
+    @apply w-full px-3 py-2 border border-border rounded-lg text-sm text-primary-dark bg-white;
+    @apply focus:outline-none focus:border-accent;
+  }
+
   .select-option {
     @apply block w-full px-3 py-2.5 text-left text-sm text-primary-dark hover:bg-primary-light cursor-pointer border-0 bg-transparent;
   }

@@ -1,7 +1,7 @@
 <section>
   <header class="mb-6">
     <h1 class="text-3xl font-bold text-primary-dark m-0 mb-1">Asignar docentes</h1>
-    <p class="text-muted m-0">Un docente puede trabajar en varios colegios simultáneamente</p>
+    <p class="text-muted m-0">Un docente puede trabajar en varios colegios simultáneamente. Los grupos listados son aquellos donde actúa como director en ese colegio.</p>
   </header>
 
   @if (mensaje()) { <div class="alert-success">{{ mensaje() }}</div> }
@@ -14,6 +14,8 @@
         [(ngModel)]="docenteId"
         name="docenteId"
         [options]="docenteOptions"
+        [searchable]="true"
+        searchPlaceholder="Nombre o documento..."
       />
     </label>
     <label class="label min-w-0">
@@ -23,6 +25,8 @@
         name="codigoDane"
         [options]="colegioOptions"
         [disabled]="colegioBloqueado"
+        [searchable]="true"
+        searchPlaceholder="Código DANE o nombre..."
       />
     </label>
     <button class="btn self-end" (click)="asignar()" [disabled]="enviando()">
@@ -35,17 +39,37 @@
       <thead>
         <tr class="bg-secondary text-primary-dark text-xs uppercase tracking-wide">
           <th class="px-4 py-3 text-left">Docente</th>
+          <th class="px-4 py-3 text-left">Documento</th>
           <th class="px-4 py-3 text-left">Colegio</th>
+          <th class="px-4 py-3 text-left">Grupos</th>
           <th class="px-4 py-3 text-left">Sector</th>
           <th class="px-4 py-3 text-left">Estado</th>
           <th class="px-4 py-3 text-left"></th>
         </tr>
       </thead>
       <tbody>
-        @for (a of asignaciones(); track a.id) {
+        @for (a of asignacionesPagina(); track a.id) {
           <tr class="border-t border-border">
             <td class="px-4 py-3">{{ a.docenteNombre }}</td>
+            <td class="px-4 py-3 text-sm">{{ a.tipoDocumento }} {{ a.numeroDocumento }}</td>
             <td class="px-4 py-3">{{ a.colegioNombre }}</td>
+            <td class="px-4 py-3">
+              @if (a.grupos?.length) {
+                <ul class="list-none p-0 m-0 flex flex-wrap gap-1.5">
+                  @for (g of a.grupos; track g.id) {
+                    <li
+                      class="inline-flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full bg-primary-light text-primary-dark"
+                      [title]="g.gradoNombre + ' · ' + g.nombre"
+                    >
+                      <span class="text-muted">{{ g.gradoNombre }}</span>
+                      <span>{{ g.nombre }}</span>
+                    </li>
+                  }
+                </ul>
+              } @else {
+                <span class="text-sm text-muted">Sin grupos asignados</span>
+              }
+            </td>
             <td class="px-4 py-3">{{ formatearSector(a.sector) }}</td>
             <td class="px-4 py-3">{{ a.activo ? 'Activo' : 'Inactivo' }}</td>
             <td class="px-4 py-3">
@@ -58,4 +82,35 @@
       </tbody>
     </table>
   </div>
+
+  @if (totalRegistros() > 0) {
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-4 px-1">
+      <p class="text-sm text-muted m-0">
+        Mostrando {{ rangoInicio() }}–{{ rangoFin() }} de {{ totalRegistros() }} asignaciones
+      </p>
+      @if (totalPaginas() > 1) {
+        <div class="flex items-center gap-2">
+          <button
+            class="btn-secondary text-sm py-1.5 px-3"
+            type="button"
+            (click)="paginaAnterior()"
+            [disabled]="paginaActual() <= 1"
+          >
+            Anterior
+          </button>
+          <span class="text-sm text-primary-dark font-medium px-2">
+            Página {{ paginaActual() }} de {{ totalPaginas() }}
+          </span>
+          <button
+            class="btn-secondary text-sm py-1.5 px-3"
+            type="button"
+            (click)="paginaSiguiente()"
+            [disabled]="paginaActual() >= totalPaginas()"
+          >
+            Siguiente
+          </button>
+        </div>
+      }
+    </div>
+  }
 </section>
